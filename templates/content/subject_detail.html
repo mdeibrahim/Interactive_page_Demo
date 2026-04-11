@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ subject.title }} — {{ subcategory.name }} — Teaching Platform{% endblock %}
+{% block meta_description %}{{ subject.title }} — Interactive lesson with multimedia explanations.{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb-bar">
+    <div class="container">
+        <ol class="breadcrumb">
+            <li><a href="{% url 'content:home' %}"><i class="fa-solid fa-house"></i></a></li>
+            <li><a href="{% url 'content:category_detail' category.slug %}">{{ category.name }}</a></li>
+            <li><a href="{% url 'content:subcategory_detail' category.slug subcategory.slug %}">{{ subcategory.name }}</a></li>
+            <li class="active">{{ subject.title }}</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="subject-page container">
+
+    <!-- Subject Header -->
+    <div class="subject-page-header">
+        <div class="subject-header-top">
+            <div>
+                <div class="subject-path">
+                    <span class="path-tag">{{ category.name }}</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                    <span class="path-tag">{{ subcategory.name }}</span>
+                </div>
+                <h1 class="subject-page-title">{{ subject.title }}</h1>
+                <div class="subject-updated">
+                    <i class="fa-regular fa-clock"></i> Last updated: {{ subject.updated_at|date:"F d, Y" }}
+                </div>
+            </div>
+            <!-- Edit Button -->
+            <a href="{% url 'content:subject_editor' subject.id %}" class="btn btn-editor" id="btn-open-editor" title="Open Frontend Editor">
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span>Edit Content</span>
+            </a>
+        </div>
+
+        <!-- Content type legend -->
+        <div class="content-legend">
+            <span class="legend-label"><i class="fa-solid fa-circle-info"></i> Click highlighted items to explore:</span>
+            <span class="legend-item legend-text"><i class="fa-solid fa-font"></i> Text</span>
+            <span class="legend-item legend-image"><i class="fa-solid fa-image"></i> Image</span>
+            <span class="legend-item legend-audio"><i class="fa-solid fa-headphones"></i> Audio</span>
+            <span class="legend-item legend-video"><i class="fa-solid fa-video"></i> Video</span>
+            <span class="legend-item legend-youtube"><i class="fa-brands fa-youtube"></i> YouTube</span>
+        </div>
+    </div>
+
+    <!-- Two-column layout -->
+    <div class="subject-layout">
+
+        <!-- Main Content Panel -->
+        <div class="subject-main">
+
+            <!-- Interactive Content Toolbar (Demo buttons) -->
+            {% if interactive_contents %}
+            <div class="content-toolbar-section">
+                <h2 class="toolbar-heading">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    Multimedia Content Examples
+                </h2>
+                <div class="toolbar-buttons">
+                    {% for ic in interactive_contents %}
+                    <button
+                        class="toolbar-btn toolbar-btn--{{ ic.content_type }}"
+                        data-content-id="{{ ic.id }}"
+                        id="toolbar-btn-{{ ic.id }}"
+                        title="{{ ic.title }}">
+                        {% if ic.content_type == 'text' %}<i class="fa-solid fa-font"></i> <span>{{ ic.title|truncatechars:20 }}</span>
+                        {% elif ic.content_type == 'image' %}<i class="fa-solid fa-image"></i> <span>{{ ic.title|truncatechars:20 }}</span>
+                        {% elif ic.content_type == 'audio' %}<i class="fa-solid fa-headphones"></i> <span>{{ ic.title|truncatechars:20 }}</span>
+                        {% elif ic.content_type == 'video' %}<i class="fa-solid fa-video"></i> <span>{{ ic.title|truncatechars:20 }}</span>
+                        {% elif ic.content_type == 'youtube' %}<i class="fa-brands fa-youtube"></i> <span>{{ ic.title|truncatechars:20 }}</span>
+                        {% endif %}
+                        <i class="fa-solid fa-magnifying-glass toolbar-zoom"></i>
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Main Body Content -->
+            <div class="content-article">
+                <h2 class="article-heading">
+                    <i class="fa-solid fa-file-lines"></i>
+                    News Article with Interactive Elements
+                </h2>
+                <div class="article-body" id="articleBody">
+                    {{ subject.body_content|safe }}
+                </div>
+            </div>
+
+        </div><!-- /subject-main -->
+
+        <!-- Sidebar — Accordion Sections -->
+        {% if accordion_sections %}
+        <aside class="subject-sidebar">
+            <div class="sidebar-card">
+                <div class="sidebar-title">
+                    <i class="fa-solid fa-list"></i> Expandable Content
+                </div>
+                <div class="accordion" id="subjectAccordion">
+                    {% for section in accordion_sections %}
+                    <div class="accordion-item {% if section.is_open_by_default %}accordion-item--open{% endif %}" id="acc-{{ section.id }}">
+                        <button class="accordion-trigger" aria-expanded="{% if section.is_open_by_default %}true{% else %}false{% endif %}" aria-controls="acc-body-{{ section.id }}">
+                            <span>{{ section.title }}</span>
+                            <i class="fa-solid fa-chevron-down accordion-icon"></i>
+                        </button>
+                        <div class="accordion-body" id="acc-body-{{ section.id }}" {% if not section.is_open_by_default %}hidden{% endif %}>
+                            <div class="accordion-content">{{ section.content|safe }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
+        {% endif %}
+
+    </div><!-- /subject-layout -->
+</div>
+
+<!-- Hidden content data for JS -->
+<script id="interactiveData" type="application/json">
+{
+    "apiUrl": "{% url 'content:get_interactive_content' 0 %}"
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/subject.js' %}"></script>
+{% endblock %}

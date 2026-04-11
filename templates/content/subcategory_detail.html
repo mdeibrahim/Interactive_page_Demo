@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ subcategory.name }} — {{ category.name }} — Teaching Platform{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb-bar">
+    <div class="container">
+        <ol class="breadcrumb">
+            <li><a href="{% url 'content:home' %}"><i class="fa-solid fa-house"></i></a></li>
+            <li><a href="{% url 'content:category_detail' category.slug %}">{{ category.name }}</a></li>
+            <li class="active">{{ subcategory.name }}</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container section-gap">
+    <div class="page-header">
+        <div class="page-header-icon"><i class="fa-solid fa-book-bookmark"></i></div>
+        <div>
+            <p class="page-parent">{{ category.name }}</p>
+            <h1 class="page-title">{{ subcategory.name }}</h1>
+            {% if subcategory.description %}
+            <p class="page-desc">{{ subcategory.description }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if subjects %}
+    <div class="subjects-list">
+        {% for subject in subjects %}
+        <a href="{% url 'content:subject_detail' category.slug subcategory.slug subject.slug %}" class="subject-item">
+            <div class="subject-num">{{ forloop.counter }}</div>
+            <div class="subject-info">
+                <h3 class="subject-title">{{ subject.title }}</h3>
+                <div class="subject-meta">
+                    <span><i class="fa-solid fa-layer-group"></i> {{ subject.accordion_sections.count }} sections</span>
+                    <span><i class="fa-solid fa-link"></i> {{ subject.interactive_contents.count }} interactive items</span>
+                    <span><i class="fa-regular fa-clock"></i> Updated {{ subject.updated_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+            <div class="subject-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon"><i class="fa-solid fa-file-lines"></i></div>
+        <h2>No Subjects Yet</h2>
+        <p>Add subjects under <strong>{{ subcategory.name }}</strong> from the admin panel.</p>
+        <a href="/admin/content/subject/add/" class="btn btn-primary" target="_blank">
+            <i class="fa-solid fa-plus"></i> Add Subject
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

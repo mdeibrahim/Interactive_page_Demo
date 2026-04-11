@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Home — Interactive Teaching Platform{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content container">
+        <div class="hero-badge"><i class="fa-solid fa-bolt"></i> Interactive Learning</div>
+        <h1 class="hero-title">Interactive Teaching Platform</h1>
+        <p class="hero-subtitle">Explore subjects with rich multimedia content — click highlighted terms to reveal explanations, images, audio, video and more.</p>
+        {% if not categories %}
+        <a href="/admin/" class="btn btn-primary" target="_blank">
+            <i class="fa-solid fa-plus"></i> Add Content via Admin
+        </a>
+        {% endif %}
+    </div>
+    <div class="hero-waves">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none">
+            <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="var(--bg-primary)"/>
+        </svg>
+    </div>
+</section>
+
+<!-- Categories Grid -->
+<div class="container section-gap">
+    {% if categories %}
+    <div class="section-header">
+        <h2 class="section-title">Browse Categories</h2>
+        <p class="section-desc">Select a category to explore subjects and interactive lessons.</p>
+    </div>
+    <div class="cards-grid">
+        {% for cat in categories %}
+        <a href="{% url 'content:category_detail' cat.slug %}" class="card card--category">
+            <div class="card-icon">
+                <i class="fa-solid fa-folder-open"></i>
+            </div>
+            <div class="card-body">
+                <h3 class="card-title">{{ cat.name }}</h3>
+                <p class="card-desc">{{ cat.description|default:"Explore subjects in this category." }}</p>
+                <div class="card-meta">
+                    <span><i class="fa-solid fa-layer-group"></i> {{ cat.subcategories.count }} sub-categories</span>
+                </div>
+            </div>
+            <div class="card-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon"><i class="fa-solid fa-book-open"></i></div>
+        <h2>No Content Yet</h2>
+        <p>Start by adding categories, subcategories, and subjects through the admin panel.</p>
+        <a href="/admin/" class="btn btn-primary" target="_blank">
+            <i class="fa-solid fa-gear"></i> Open Admin Panel
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Feature Highlights -->
+<section class="features-section container">
+    <div class="section-header">
+        <h2 class="section-title">Platform Features</h2>
+        <p class="section-desc">Everything you need for an interactive learning experience</p>
+    </div>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon feature-icon--blue"><i class="fa-solid fa-font"></i></div>
+            <h3>Rich Text</h3>
+            <p>Bold, italic, underline formatting — just like Microsoft Word.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon feature-icon--purple"><i class="fa-solid fa-image"></i></div>
+            <h3>Images</h3>
+            <p>Click highlighted terms to reveal descriptive images.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon feature-icon--green"><i class="fa-solid fa-headphones"></i></div>
+            <h3>Audio</h3>
+            <p>Play audio explanations directly in a modal popup.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon feature-icon--red"><i class="fa-brands fa-youtube"></i></div>
+            <h3>YouTube Videos</h3>
+            <p>Embed YouTube videos for visual explanations.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon feature-icon--orange"><i class="fa-solid fa-video"></i></div>
+            <h3>Local Videos</h3>
+            <p>Upload and play your own video content.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon feature-icon--teal"><i class="fa-solid fa-layer-group"></i></div>
+            <h3>Accordion Sections</h3>
+            <p>Expandable sidebar for Introduction, Details, Resources.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

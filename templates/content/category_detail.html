@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ category.name }} — Teaching Platform{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb-bar">
+    <div class="container">
+        <ol class="breadcrumb">
+            <li><a href="{% url 'content:home' %}"><i class="fa-solid fa-house"></i></a></li>
+            <li class="active">{{ category.name }}</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container section-gap">
+    <div class="page-header">
+        <div class="page-header-icon"><i class="fa-solid fa-folder-open"></i></div>
+        <div>
+            <h1 class="page-title">{{ category.name }}</h1>
+            {% if category.description %}
+            <p class="page-desc">{{ category.description }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if subcategories %}
+    <div class="cards-grid">
+        {% for subcat in subcategories %}
+        <a href="{% url 'content:subcategory_detail' category.slug subcat.slug %}" class="card card--subcat">
+            <div class="card-icon">
+                <i class="fa-solid fa-book-bookmark"></i>
+            </div>
+            <div class="card-body">
+                <h3 class="card-title">{{ subcat.name }}</h3>
+                <p class="card-desc">{{ subcat.description|default:"Explore subjects in this sub-category." }}</p>
+                <div class="card-meta">
+                    <span><i class="fa-solid fa-file-lines"></i> {{ subcat.subjects.count }} subjects</span>
+                </div>
+            </div>
+            <div class="card-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon"><i class="fa-solid fa-folder-open"></i></div>
+        <h2>No Sub-Categories Yet</h2>
+        <p>Add sub-categories under <strong>{{ category.name }}</strong> from the admin panel.</p>
+        <a href="/admin/content/subcategory/add/" class="btn btn-primary" target="_blank">
+            <i class="fa-solid fa-plus"></i> Add Sub-Category
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
