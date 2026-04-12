@@ -1,16 +1,17 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from unfold.admin import ModelAdmin, TabularInline, StackedInline
 from .models import Category, SubCategory, Subject, AccordionSection, InteractiveContent
 
 
-class SubCategoryInline(admin.TabularInline):
+class SubCategoryInline(TabularInline):
     model = SubCategory
     extra = 1
     prepopulated_fields = {'slug': ('name',)}
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(ModelAdmin):
     list_display = ('name', 'slug', 'subcategory_count', 'created_at')
     prepopulated_fields = {'slug': ('name',)}
     search_fields = ('name',)
@@ -22,7 +23,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(SubCategory)
-class SubCategoryAdmin(admin.ModelAdmin):
+class SubCategoryAdmin(ModelAdmin):
     list_display = ('name', 'category', 'slug', 'subject_count', 'created_at')
     prepopulated_fields = {'slug': ('name',)}
     list_filter = ('category',)
@@ -33,13 +34,13 @@ class SubCategoryAdmin(admin.ModelAdmin):
     subject_count.short_description = 'Subjects'
 
 
-class AccordionSectionInline(admin.StackedInline):
+class AccordionSectionInline(StackedInline):
     model = AccordionSection
     extra = 1
     fields = ('title', 'content', 'order', 'is_open_by_default')
 
 
-class InteractiveContentInline(admin.TabularInline):
+class InteractiveContentInline(TabularInline):
     model = InteractiveContent
     extra = 1
     fields = ('title', 'content_type', 'text_content', 'image', 'audio', 'video', 'youtube_url')
@@ -47,7 +48,7 @@ class InteractiveContentInline(admin.TabularInline):
 
 
 @admin.register(Subject)
-class SubjectAdmin(admin.ModelAdmin):
+class SubjectAdmin(ModelAdmin):
     list_display = ('title', 'subcategory', 'category_name', 'content_count', 'updated_at')
     prepopulated_fields = {'slug': ('title',)}
     list_filter = ('subcategory__category', 'subcategory')
@@ -78,14 +79,14 @@ class SubjectAdmin(admin.ModelAdmin):
 
 
 @admin.register(AccordionSection)
-class AccordionSectionAdmin(admin.ModelAdmin):
+class AccordionSectionAdmin(ModelAdmin):
     list_display = ('title', 'subject', 'order', 'is_open_by_default')
     list_filter = ('subject__subcategory__category',)
     search_fields = ('title', 'subject__title')
 
 
 @admin.register(InteractiveContent)
-class InteractiveContentAdmin(admin.ModelAdmin):
+class InteractiveContentAdmin(ModelAdmin):
     list_display = ('id', 'title', 'content_type', 'subject', 'preview', 'created_at')
     list_filter = ('content_type', 'subject__subcategory__category')
     search_fields = ('title', 'subject__title')

@@ -187,6 +187,8 @@ def api_ic_update(request, ic_id):
             return JsonResponse({'error': 'Invalid body'}, status=400)
         files = {}
 
+    if 'content_type' in data:
+        ic.content_type = data['content_type']
     if 'title' in data:
         ic.title = data['title']
     if 'text_content' in data:

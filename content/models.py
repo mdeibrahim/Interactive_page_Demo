@@ -100,11 +100,44 @@ class InteractiveContent(models.Model):
         return f"[{self.get_content_type_display()}] {self.title}"
 
     def get_youtube_embed_url(self):
-        """Convert youtube watch URL to embed URL"""
+        """Convert a YouTube URL (watch/shorts/youtu.be/embed) to embed URL."""
+        from urllib.parse import urlparse, parse_qs
         import re
+
         if not self.youtube_url:
             return ''
-        match = re.search(r'(?:v=|youtu\.be/)([a-zA-Z0-9_-]{11})', self.youtube_url)
-        if match:
-            return f"https://www.youtube.com/embed/{match.group(1)}"
-        return self.youtube_url
+
+        raw_url = self.youtube_url.strip()
+        video_id = None
+
+        try:
+            parsed = urlparse(raw_url)
+            host = (parsed.netloc or '').lower().replace('www.', '')
+
+            # https://youtube.com/watch?v=VIDEO_ID
+            if host in ('youtube.com', 'm.youtube.com'):
+                if parsed.path == '/watch':
+                    video_id = (parse_qs(parsed.query).get('v') or [None])[0]
+                elif parsed.path.startswith('/shorts/'):
+                    video_id = parsed.path.split('/shorts/', 1)[1].split('/', 1)[0]
+                elif parsed.path.startswith('/live/'):
+                    video_id = parsed.path.split('/live/', 1)[1].split('/', 1)[0]
+                elif parsed.path.startswith('/embed/'):
+                    video_id = parsed.path.split('/embed/', 1)[1].split('/', 1)[0]
+
+            # https://youtu.be/VIDEO_ID
+            elif host == 'youtu.be':
+                video_id = parsed.path.lstrip('/').split('/', 1)[0]
+        except Exception:
+            video_id = None
+
+        # Fallback regex (supports pasted text/HTML containing a YouTube id)
+        if not video_id:
+            match = re.search(r'(?:v=|youtu\.be/|/embed/|/shorts/|/live/)([a-zA-Z0-9_-]{11})', raw_url)
+            if match:
+                video_id = match.group(1)
+
+        if video_id and re.fullmatch(r'[a-zA-Z0-9_-]{11}', video_id):
+            return f"https://www.youtube.com/embed/{video_id}"
+
+        return ''

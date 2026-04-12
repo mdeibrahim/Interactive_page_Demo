@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const editorDataEl = document.getElementById('editorData');
     if (!editorDataEl) return;
     const config = JSON.parse(editorDataEl.textContent);
+    const subjectApiUrl = `/api/subject/${config.subjectId}/`;
+    let subjectData = null;
     
     // --- Toolbar Formatting ---
     const formatButtons = document.querySelectorAll('.rte-btn[data-cmd]');
@@ -75,12 +77,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle Link Media
     const btnLinkMedia = document.getElementById('btn-insert-link');
-    const insertLinkModal = document.getElementById('insertLinkModal');
+    const linkInlinePanel = document.getElementById('linkInlinePanel');
     const linkPickerList = document.getElementById('linkPickerList');
     const insertLinkConfirm = document.getElementById('insertLinkConfirm');
+    const insertLinkCancel = document.getElementById('insertLinkCancel');
     
     let savedSelection = null;
     let selectedMediaId = null;
+
+    function closeLinkInlinePanel() {
+        if (!linkInlinePanel) return;
+        linkInlinePanel.hidden = true;
+        selectedMediaId = null;
+        insertLinkConfirm.disabled = true;
+        document.querySelectorAll('.link-picker-item').forEach(el => el.classList.remove('selected'));
+    }
 
     btnLinkMedia.addEventListener('click', () => {
         const sel = window.getSelection();
@@ -124,12 +135,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 linkPickerList.appendChild(div);
             });
         }
-        
-        insertLinkModal.hidden = false;
+
+        linkInlinePanel.hidden = false;
     });
 
-    document.getElementById('insertLinkClose').addEventListener('click', () => insertLinkModal.hidden = true);
-    document.getElementById('insertLinkCancel').addEventListener('click', () => insertLinkModal.hidden = true);
+    insertLinkCancel.addEventListener('click', () => closeLinkInlinePanel());
 
     insertLinkConfirm.addEventListener('click', () => {
         if(!selectedMediaId || !savedSelection) return;
@@ -144,29 +154,70 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Remove formatting and insert HTML
         document.execCommand("insertHTML", false, `<span class="${linkClass}" data-content-id="${selectedMediaId}">${savedSelection.toString()}</span>`);
-        
-        insertLinkModal.hidden = true;
+
+        closeLinkInlinePanel();
         savedSelection = null;
-        selectedMediaId = null;
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!linkInlinePanel || linkInlinePanel.hidden) return;
+        if (linkInlinePanel.contains(e.target) || btnLinkMedia.contains(e.target)) return;
+        closeLinkInlinePanel();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && linkInlinePanel && !linkInlinePanel.hidden) {
+            closeLinkInlinePanel();
+        }
     });
 
     // Interactive Content Modals & API setup
-    const icModal = document.getElementById('icModal');
+    const icInlinePanel = document.getElementById('icInlinePanel');
     const icForm = document.getElementById('icForm');
-    
-    document.getElementById('btn-add-ic').addEventListener('click', () => {
+
+    async function loadSubjectData() {
+        if (subjectData) return subjectData;
+        const res = await fetch(subjectApiUrl);
+        if (!res.ok) {
+            throw new Error(`Failed to load subject data (${res.status})`);
+        }
+        subjectData = await res.json();
+        return subjectData;
+    }
+
+    function openIcInlineForCreate() {
         icForm.reset();
         document.getElementById('icFormId').value = '';
-        document.getElementById('icModalTitle').innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Add Media Item';
+        document.getElementById('icInlineTitle').innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Add Media Item';
         document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
         document.querySelector('.type-btn[data-type="text"]').classList.add('active');
         document.getElementById('icType').value = 'text';
         updateIcFormSections('text');
-        icModal.hidden = false;
+        icInlinePanel.hidden = false;
+    }
+
+    function openIcInlineForEdit(ic) {
+        icForm.reset();
+        document.getElementById('icFormId').value = ic.id;
+        document.getElementById('icInlineTitle').innerHTML = '<i class="fa-solid fa-pen"></i> Edit Media Item';
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+        const typeBtn = document.querySelector(`.type-btn[data-type="${ic.content_type}"]`);
+        if (typeBtn) typeBtn.classList.add('active');
+        document.getElementById('icType').value = ic.content_type;
+        updateIcFormSections(ic.content_type);
+
+        document.getElementById('icTitle').value = ic.title || '';
+        document.getElementById('icTextContent').value = ic.text_content || '';
+        document.getElementById('icYoutubeUrl').value = ic.youtube_url || '';
+        icInlinePanel.hidden = false;
+    }
+    
+    document.getElementById('btn-add-ic').addEventListener('click', () => {
+        openIcInlineForCreate();
     });
 
-    document.getElementById('icModalClose').addEventListener('click', () => icModal.hidden = true);
-    document.getElementById('icModalCancel').addEventListener('click', () => icModal.hidden = true);
+    document.getElementById('icInlineClose').addEventListener('click', () => icInlinePanel.hidden = true);
+    document.getElementById('icInlineCancel').addEventListener('click', () => icInlinePanel.hidden = true);
 
     document.querySelectorAll('.type-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -188,11 +239,19 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const id = document.getElementById('icFormId').value;
         const url = id ? `${config.icUpdateBase}${id}/update/` : config.icCreateUrl;
+        const contentType = document.getElementById('icType').value;
+        const titleValue = document.getElementById('icTitle').value.trim();
         
         const fd = new FormData(icForm);
-        fd.append('content_type', document.getElementById('icType').value);
-        if(document.getElementById('icType').value === 'text') {
+        fd.set('title', titleValue);
+        fd.set('content_type', contentType);
+
+        if (contentType === 'text') {
             fd.append('text_content', document.getElementById('icTextContent').value);
+        }
+
+        if (contentType === 'youtube') {
+            fd.set('youtube_url', document.getElementById('icYoutubeUrl').value.trim());
         }
 
         try {
@@ -211,18 +270,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Accordion Modals & API setup
-    const accModal = document.getElementById('accModal');
+    const accInlinePanel = document.getElementById('accInlinePanel');
     const accForm = document.getElementById('accForm');
 
-    document.getElementById('btn-add-accordion').addEventListener('click', () => {
+    function openAccInlineForCreate() {
         accForm.reset();
         document.getElementById('accFormId').value = '';
-        document.getElementById('accModalTitle').innerHTML = '<i class="fa-solid fa-layer-group"></i> Add Accordion Section';
-        accModal.hidden = false;
+        document.getElementById('accInlineTitle').innerHTML = '<i class="fa-solid fa-layer-group"></i> Add Accordion Section';
+        accInlinePanel.hidden = false;
+    }
+
+    function openAccInlineForEdit(section) {
+        accForm.reset();
+        document.getElementById('accFormId').value = section.id;
+        document.getElementById('accInlineTitle').innerHTML = '<i class="fa-solid fa-pen"></i> Edit Accordion Section';
+        document.getElementById('accTitle').value = section.title || '';
+        document.getElementById('accContent').value = section.content || '';
+        document.getElementById('accIsOpen').checked = !!section.is_open_by_default;
+        accInlinePanel.hidden = false;
+    }
+
+    document.getElementById('btn-add-accordion').addEventListener('click', () => {
+        openAccInlineForCreate();
     });
 
-    document.getElementById('accModalClose').addEventListener('click', () => accModal.hidden = true);
-    document.getElementById('accModalCancel').addEventListener('click', () => accModal.hidden = true);
+    document.getElementById('accInlineClose').addEventListener('click', () => accInlinePanel.hidden = true);
+    document.getElementById('accInlineCancel').addEventListener('click', () => accInlinePanel.hidden = true);
 
     accForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -283,16 +356,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // Editing existing items
     document.querySelectorAll('.ic-edit-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
-            // Need API to fetch single IC. For simplicity, we just reload it in a real app
-            // However, we don't have a single GET endpoint. We can parse the DOM or fetch from subject API
-            const id = btn.getAttribute('data-ic-id');
-            alert("Edit modal currently requires fetching data. For now, delete and recreate.");
+            try {
+                const id = btn.getAttribute('data-ic-id');
+                const data = await loadSubjectData();
+                const ic = (data.interactive_contents || []).find(item => String(item.id) === String(id));
+                if (!ic) {
+                    alert('Could not find this media item.');
+                    return;
+                }
+                openIcInlineForEdit(ic);
+            } catch (err) {
+                console.error(err);
+                alert('Error loading media item data.');
+            }
         });
     });
 
     document.querySelectorAll('.acc-edit-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            alert("Edit modal currently requires fetching data. For now, delete and recreate.");
+        btn.addEventListener('click', async () => {
+            try {
+                const id = btn.getAttribute('data-sec-id');
+                const data = await loadSubjectData();
+                const section = (data.accordion_sections || []).find(item => String(item.id) === String(id));
+                if (!section) {
+                    alert('Could not find this accordion section.');
+                    return;
+                }
+                openAccInlineForEdit(section);
+            } catch (err) {
+                console.error(err);
+                alert('Error loading accordion section data.');
+            }
         });
     });
 

@@ -1,6 +1,7 @@
 
 from pathlib import Path
 import os
+from .unfold_config import UNFOLD
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -11,6 +12,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
+    'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

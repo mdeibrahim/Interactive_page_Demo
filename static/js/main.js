@@ -111,12 +111,20 @@
 
             case 'youtube':
                 if (data.youtube_embed_url) {
+                    const youtubeUrl = new URL(data.youtube_embed_url);
+                    youtubeUrl.searchParams.set('autoplay', '1');
+                    youtubeUrl.searchParams.set('playsinline', '1');
+                    youtubeUrl.searchParams.set('rel', '0');
+                    youtubeUrl.searchParams.set('origin', window.location.origin);
+                    youtubeUrl.searchParams.set('widget_referrer', window.location.href);
+
                     html = `
                         <div class="modal-youtube-wrap">
                             <iframe
-                                src="${data.youtube_embed_url}?autoplay=1"
+                                src="${youtubeUrl.toString()}"
                                 title="${escHtml(data.title)}"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                referrerpolicy="strict-origin-when-cross-origin"
                                 allowfullscreen>
                             </iframe>
                         </div>`;

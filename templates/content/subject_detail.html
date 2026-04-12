@@ -35,20 +35,10 @@
                 </div>
             </div>
             <!-- Edit Button -->
-            <a href="{% url 'content:subject_editor' subject.id %}" class="btn btn-editor" id="btn-open-editor" title="Open Frontend Editor">
+            <a href="{% url 'content:subject_editor' subject.id %}" class="btn btn-editor" id="btn-open-editor" title="Open Frontend Editor" style="background-color: #16a34a; border-color: #16a34a; color: #ffffff; font-weight: 700;">
                 <i class="fa-solid fa-pen-to-square"></i>
                 <span>Edit Content</span>
             </a>
-        </div>
-
-        <!-- Content type legend -->
-        <div class="content-legend">
-            <span class="legend-label"><i class="fa-solid fa-circle-info"></i> Click highlighted items to explore:</span>
-            <span class="legend-item legend-text"><i class="fa-solid fa-font"></i> Text</span>
-            <span class="legend-item legend-image"><i class="fa-solid fa-image"></i> Image</span>
-            <span class="legend-item legend-audio"><i class="fa-solid fa-headphones"></i> Audio</span>
-            <span class="legend-item legend-video"><i class="fa-solid fa-video"></i> Video</span>
-            <span class="legend-item legend-youtube"><i class="fa-brands fa-youtube"></i> YouTube</span>
         </div>
     </div>
 

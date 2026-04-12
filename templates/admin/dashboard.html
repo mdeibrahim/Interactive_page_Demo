@@ -1,0 +1,456 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Admin Dashboard - Teaching Platform{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .dashboard-container {
+        padding: 24px;
+        max-width: 1600px;
+        margin: 0 auto;
+        background: #f1f5f9;
+        border-radius: 16px;
+    }
+
+    .dashboard-header {
+        margin-bottom: 24px;
+    }
+
+    .dashboard-header h1 {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .dashboard-header p {
+        margin-top: 6px;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid #d1d5db;
+        padding: 18px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.1);
+    }
+
+    .stat-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .stat-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        color: white;
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    .ic-cat { background: linear-gradient(135deg, #4f46e5, #6366f1); }
+    .ic-sub { background: linear-gradient(135deg, #db2777, #ec4899); }
+    .ic-subj { background: linear-gradient(135deg, #0284c7, #0ea5e9); }
+    .ic-acc { background: linear-gradient(135deg, #16a34a, #22c55e); }
+    .ic-int { background: linear-gradient(135deg, #ea580c, #f97316); }
+    .ic-user { background: linear-gradient(135deg, #0d9488, #14b8a6); }
+
+    .stat-label {
+        margin: 0;
+        font-size: 12px;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: #6b7280;
+        font-weight: 700;
+    }
+
+    .stat-number {
+        margin: 6px 0 10px;
+        font-size: 38px;
+        line-height: 1;
+        color: #111827;
+        font-weight: 800;
+    }
+
+    .chip {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        background: #eef2ff;
+        color: #3730a3;
+    }
+
+    .dashboard-section {
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+        margin-bottom: 18px;
+    }
+
+    .section-title {
+        margin: 0 0 14px;
+        font-size: 19px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 18px;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .dashboard-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .dashboard-table th,
+    .dashboard-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #f1f5f9;
+        text-align: left;
+        font-size: 14px;
+    }
+
+    .dashboard-table th {
+        background: #f8fafc;
+        color: #334155;
+        font-weight: 700;
+    }
+
+    .dashboard-table tr:hover td {
+        background: #eef6ff;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .badge-primary { background: #e0e7ff; color: #3730a3; }
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-warning { background: #ffedd5; color: #9a3412; }
+
+    .muted-empty {
+        color: #94a3b8;
+        text-align: center;
+    }
+
+    /* Dark mode support (Unfold + generic selectors) */
+    html.dark .dashboard-header h1,
+    body.dark .dashboard-header h1,
+    [data-theme="dark"] .dashboard-header h1 {
+        color: #e5e7eb;
+    }
+
+    html.dark .dashboard-header p,
+    body.dark .dashboard-header p,
+    [data-theme="dark"] .dashboard-header p {
+        color: #9ca3af;
+    }
+
+    html.dark .stat-card,
+    body.dark .stat-card,
+    [data-theme="dark"] .stat-card,
+    html.dark .dashboard-section,
+    body.dark .dashboard-section,
+    [data-theme="dark"] .dashboard-section {
+        background: #1f2937;
+        border-color: #334155;
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+    }
+
+    html.dark .dashboard-container,
+    body.dark .dashboard-container,
+    [data-theme="dark"] .dashboard-container {
+        background: #0b1220;
+    }
+
+    html.dark .stat-label,
+    body.dark .stat-label,
+    [data-theme="dark"] .stat-label {
+        color: #9ca3af;
+    }
+
+    html.dark .stat-number,
+    body.dark .stat-number,
+    [data-theme="dark"] .stat-number,
+    html.dark .section-title,
+    body.dark .section-title,
+    [data-theme="dark"] .section-title,
+    html.dark .dashboard-table td,
+    body.dark .dashboard-table td,
+    [data-theme="dark"] .dashboard-table td {
+        color: #e5e7eb;
+    }
+
+    html.dark .chip,
+    body.dark .chip,
+    [data-theme="dark"] .chip {
+        background: #1e3a8a;
+        color: #dbeafe;
+    }
+
+    html.dark .dashboard-table th,
+    body.dark .dashboard-table th,
+    [data-theme="dark"] .dashboard-table th {
+        background: #0b1220;
+        color: #cbd5e1;
+        border-bottom-color: #1f2937;
+    }
+
+    html.dark .dashboard-table th,
+    html.dark .dashboard-table td,
+    body.dark .dashboard-table th,
+    body.dark .dashboard-table td,
+    [data-theme="dark"] .dashboard-table th,
+    [data-theme="dark"] .dashboard-table td {
+        border-bottom-color: #1f2937;
+    }
+
+    html.dark .dashboard-table tr:hover td,
+    body.dark .dashboard-table tr:hover td,
+    [data-theme="dark"] .dashboard-table tr:hover td {
+        background: #111c33;
+    }
+
+    html.dark .badge-primary,
+    body.dark .badge-primary,
+    [data-theme="dark"] .badge-primary {
+        background: #312e81;
+        color: #c7d2fe;
+    }
+
+    html.dark .badge-success,
+    body.dark .badge-success,
+    [data-theme="dark"] .badge-success {
+        background: #14532d;
+        color: #bbf7d0;
+    }
+
+    html.dark .badge-warning,
+    body.dark .badge-warning,
+    [data-theme="dark"] .badge-warning {
+        background: #7c2d12;
+        color: #fed7aa;
+    }
+
+    html.dark .muted-empty,
+    body.dark .muted-empty,
+    [data-theme="dark"] .muted-empty {
+        color: #94a3b8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>Admin Dashboard</h1>
+        <p>Full platform overview for content and activity.</p>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card categories">
+            <div class="stat-top">
+                <p class="stat-label">Total Categories</p>
+                <div class="stat-icon ic-cat">🗂️</div>
+            </div>
+            <div class="stat-number">{{ stats.categories_count }}</div>
+            <span class="chip">catalog</span>
+        </div>
+        <div class="stat-card subcategories">
+            <div class="stat-top">
+                <p class="stat-label">Sub Categories</p>
+                <div class="stat-icon ic-sub">🗃️</div>
+            </div>
+            <div class="stat-number">{{ stats.subcategories_count }}</div>
+            <span class="chip">organized</span>
+        </div>
+        <div class="stat-card subjects">
+            <div class="stat-top">
+                <p class="stat-label">Subjects</p>
+                <div class="stat-icon ic-subj">📘</div>
+            </div>
+            <div class="stat-number">{{ stats.subjects_count }}</div>
+            <span class="chip">learning pages</span>
+        </div>
+        <div class="stat-card accordion">
+            <div class="stat-top">
+                <p class="stat-label">Accordion Sections</p>
+                <div class="stat-icon ic-acc">📑</div>
+            </div>
+            <div class="stat-number">{{ stats.accordion_sections_count }}</div>
+            <span class="chip">expandables</span>
+        </div>
+        <div class="stat-card interactive">
+            <div class="stat-top">
+                <p class="stat-label">Interactive Items</p>
+                <div class="stat-icon ic-int">⚡</div>
+            </div>
+            <div class="stat-number">{{ stats.interactive_contents_count }}</div>
+            <span class="chip">media + actions</span>
+        </div>
+        <div class="stat-card users">
+            <div class="stat-top">
+                <p class="stat-label">Total Users</p>
+                <div class="stat-icon ic-user">👥</div>
+            </div>
+            <div class="stat-number">{{ stats.total_users }}</div>
+            <span class="chip">{{ stats.staff_users }} staff</span>
+        </div>
+    </div>
+    
+    <!-- Content Overview Section -->
+    <div class="grid-2">
+        <!-- Categories Breakdown -->
+        <div class="dashboard-section">
+            <div class="section-title">📊 Categories Overview</div>
+            <div class="table-container">
+                <table class="dashboard-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Subjects</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cat in categories_with_counts %}
+                        <tr>
+                            <td>{{ cat.name }}</td>
+                            <td><span class="badge badge-primary">{{ cat.subject_count }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="muted-empty">No categories yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Content Types Distribution -->
+        <div class="dashboard-section">
+            <div class="section-title">📁 Content Types Distribution</div>
+            <div class="table-container">
+                <table class="dashboard-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in content_types_dist %}
+                        <tr>
+                            <td>{{ item.content_type|title }}</td>
+                            <td><span class="badge badge-success">{{ item.count }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="muted-empty">No interactive content yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Latest Subjects Section -->
+    <div class="dashboard-section">
+        <div class="section-title">📚 Latest Subjects</div>
+        <div class="table-container">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                            <th>Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject in latest_subjects %}
+                    <tr>
+                        <td><strong>{{ subject.title }}</strong></td>
+                        <td>{{ subject.subcategory.category.name }}</td>
+                        <td>{{ subject.updated_at|date:"d M Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                            <td colspan="3" class="muted-empty">No subjects yet</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Latest Interactive Content Section -->
+    <div class="dashboard-section">
+        <div class="section-title">✨ Latest Interactive Content</div>
+        <div class="table-container">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Subject</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for content in latest_contents %}
+                    <tr>
+                        <td><strong>{{ content.title }}</strong></td>
+                            <td><span class="badge badge-warning">{{ content.content_type|title }}</span></td>
+                        <td>{{ content.subject.title }}</td>
+                        <td>{{ content.created_at|date:"d M Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                            <td colspan="4" class="muted-empty">No interactive content yet</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
