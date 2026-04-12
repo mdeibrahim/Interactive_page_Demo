@@ -112,6 +112,10 @@ STORAGES = {
 }
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media'))
+
+# Render persistent disk support (if mounted at /var/data)
+if os.getenv('RENDER') and not os.getenv('MEDIA_ROOT'):
+    MEDIA_ROOT = '/var/data/media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
