@@ -2,17 +2,16 @@
 from pathlib import Path
 import os
 import dj_database_url
-from dotenv import load_dotenv
+from decouple import config
 from .unfold_config import UNFOLD
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / '.env')
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-interactive-teaching-platform-secret-key-change-in-production')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-interactive-teaching-platform-secret-key-change-in-production')
 
-DEBUG = os.getenv('DEBUG', 'False').lower() in ('1', 'true', 'yes', 'on')
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS_ENV = os.getenv('ALLOWED_HOSTS', '')
+ALLOWED_HOSTS_ENV = config('ALLOWED_HOSTS', default='')
 if ALLOWED_HOSTS_ENV:
     ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',') if host.strip()]
 else:
@@ -24,11 +23,11 @@ CSRF_TRUSTED_ORIGINS = [
     'https://interactivepagedemo-production.up.railway.app',
 ]
 
-RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default='')
 if RENDER_EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')
 
-RAILWAY_PUBLIC_DOMAIN = os.getenv('RAILWAY_PUBLIC_DOMAIN')
+RAILWAY_PUBLIC_DOMAIN = config('RAILWAY_PUBLIC_DOMAIN', default='')
 if RAILWAY_PUBLIC_DOMAIN:
     CSRF_TRUSTED_ORIGINS.append(f'https://{RAILWAY_PUBLIC_DOMAIN}')
 
@@ -86,12 +85,12 @@ DATABASES = {
 }
 
 DATABASE_URL = (
-    os.getenv('DATABASE_URL')
-    or os.getenv('EXTERNAL_DATABASE_URL')
-    or os.getenv('INTERNAL_DATABASE_URL')
+    config('DATABASE_URL', default='')
+    or config('EXTERNAL_DATABASE_URL', default='')
+    or config('INTERNAL_DATABASE_URL', default='')
 )
 
-DB_SSL_REQUIRE = os.getenv('DB_SSL_REQUIRE', 'True').lower() in ('1', 'true', 'yes', 'on')
+DB_SSL_REQUIRE = config('DB_SSL_REQUIRE', default=True, cast=bool)
 
 if DATABASE_URL:
     DATABASES['default'] = dj_database_url.config(
@@ -125,10 +124,10 @@ STORAGES = {
 }
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media'))
+MEDIA_ROOT = config('MEDIA_ROOT', default=str(BASE_DIR / 'media'))
 
 # Render persistent disk support (if mounted at /var/data)
-if os.getenv('RENDER') and not os.getenv('MEDIA_ROOT'):
+if config('RENDER', default='') and not config('MEDIA_ROOT', default=''):
     MEDIA_ROOT = '/var/data/media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

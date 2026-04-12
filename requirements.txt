@@ -1,15 +1,10 @@
-asgiref==3.11.1
-click==8.3.2
-colorama==0.4.6
 Django==6.0.4
-h11==0.16.0
-pillow==12.2.0
 django-unfold==0.89.0
-sqlparse==0.5.5
-tzdata==2026.1
-uvicorn==0.44.0
+Pillow==12.2.0
+
+# Deployment/runtime
 gunicorn==23.0.0
 whitenoise==6.9.0
 dj-database-url==2.3.0
 psycopg2-binary==2.9.10
-python-dotenv==1.0.1
+python-decouple==3.8
