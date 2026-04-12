@@ -2,9 +2,11 @@
 from pathlib import Path
 import os
 import dj_database_url
+from dotenv import load_dotenv
 from .unfold_config import UNFOLD
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-interactive-teaching-platform-secret-key-change-in-production')
 
@@ -83,9 +85,20 @@ DATABASES = {
     }
 }
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = (
+    os.getenv('DATABASE_URL')
+    or os.getenv('EXTERNAL_DATABASE_URL')
+    or os.getenv('INTERNAL_DATABASE_URL')
+)
+
+DB_SSL_REQUIRE = os.getenv('DB_SSL_REQUIRE', 'True').lower() in ('1', 'true', 'yes', 'on')
+
 if DATABASE_URL:
-    DATABASES['default'] = dj_database_url.config(default=DATABASE_URL, conn_max_age=600, ssl_require=True)
+    DATABASES['default'] = dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        ssl_require=DB_SSL_REQUIRE,
+    )
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
