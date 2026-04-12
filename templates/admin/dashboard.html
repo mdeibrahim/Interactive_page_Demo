@@ -1,135 +1,225 @@
 {% extends "admin/base_site.html" %}
-{% load static %}
 
-{% block title %}Admin Dashboard - Teaching Platform{% endblock %}
+{% block title %}Dashboard | Teaching Platform Admin{% endblock %}
 
 {% block extrastyle %}
 <style>
-    .dashboard-container {
+    .dashboard-shell {
+        --bg-1: #f8fafc;
+        --bg-2: #ecfeff;
+        --card: #ffffff;
+        --border: #dbe5ef;
+        --text-1: #0f172a;
+        --text-2: #475569;
+        --muted: #64748b;
+        --brand: #0369a1;
+        --brand-soft: #e0f2fe;
+        --success: #166534;
+        --success-soft: #dcfce7;
+        --warn: #9a3412;
+        --warn-soft: #ffedd5;
+
+        background: radial-gradient(circle at top right, #dbeafe 0%, var(--bg-1) 42%),
+                    radial-gradient(circle at 14% 20%, var(--bg-2) 0%, transparent 38%);
+        border: 1px solid var(--border);
+        border-radius: 18px;
         padding: 24px;
-        max-width: 1600px;
-        margin: 0 auto;
-        background: #f1f5f9;
-        border-radius: 16px;
     }
 
-    .dashboard-header {
-        margin-bottom: 24px;
+    .hero {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 22px;
+        flex-wrap: wrap;
     }
 
-    .dashboard-header h1 {
+    .hero h1 {
         margin: 0;
         font-size: 30px;
-        font-weight: 700;
-        color: #1f2937;
+        font-weight: 800;
+        color: var(--text-1);
     }
 
-    .dashboard-header p {
-        margin-top: 6px;
-        color: #6b7280;
+    .hero p {
+        margin: 6px 0 0;
+        color: var(--text-2);
         font-size: 14px;
     }
 
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 18px;
-        margin-bottom: 24px;
+    .quick-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-start;
+        justify-content: flex-end;
     }
 
-    .stat-card {
-        background: #ffffff;
-        border-radius: 14px;
-        border: 1px solid #d1d5db;
-        padding: 18px;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        text-decoration: none;
+        padding: 9px 14px;
+        font-weight: 700;
+        font-size: 12px;
+        border: 1px solid transparent;
         transition: transform .15s ease, box-shadow .15s ease;
     }
 
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.1);
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(14, 116, 144, 0.15);
     }
 
-    .stat-top {
+    .action-btn-primary {
+        background: linear-gradient(135deg, #0369a1, #0284c7);
+        color: #fff;
+    }
+
+    .action-btn-soft {
+        background: var(--brand-soft);
+        border-color: #bae6fd;
+        color: #0c4a6e;
+    }
+
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .kpi-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        transform: translateY(0);
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
+        border-color: #93c5fd;
+    }
+
+    .kpi-label {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--muted);
+    }
+
+    .kpi-value {
+        margin: 8px 0 2px;
+        font-size: 32px;
+        line-height: 1;
+        font-weight: 800;
+        color: var(--text-1);
+    }
+
+    .kpi-footnote {
+        margin: 0;
+        font-size: 12px;
+        color: var(--text-2);
+    }
+
+    .split-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+
+    .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        transform: translateY(0);
+    }
+
+    .panel:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 26px rgba(15, 23, 42, 0.1);
+        border-color: #bae6fd;
+    }
+
+    .panel h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+        color: var(--text-1);
+    }
+
+    .health-row {
+        margin-bottom: 12px;
+    }
+
+    .health-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .health-row label {
+        display: flex;
+        justify-content: space-between;
+        color: var(--text-2);
+        font-size: 13px;
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+
+    .meter {
+        position: relative;
+        background: #e2e8f0;
+        border-radius: 999px;
+        height: 10px;
+        overflow: hidden;
+    }
+
+    .meter > span {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #0284c7, #0ea5e9);
+    }
+
+    .warning-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+    }
+
+    .warning-item {
+        border-radius: 10px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        padding: 10px;
+        color: var(--warn);
+        font-size: 13px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 10px;
     }
 
-    .stat-icon {
-        width: 46px;
-        height: 46px;
-        border-radius: 12px;
-        display: grid;
-        place-items: center;
-        color: white;
-        font-size: 20px;
-        font-weight: 700;
+    .warning-item strong {
+        font-size: 16px;
     }
 
-    .ic-cat { background: linear-gradient(135deg, #4f46e5, #6366f1); }
-    .ic-sub { background: linear-gradient(135deg, #db2777, #ec4899); }
-    .ic-subj { background: linear-gradient(135deg, #0284c7, #0ea5e9); }
-    .ic-acc { background: linear-gradient(135deg, #16a34a, #22c55e); }
-    .ic-int { background: linear-gradient(135deg, #ea580c, #f97316); }
-    .ic-user { background: linear-gradient(135deg, #0d9488, #14b8a6); }
-
-    .stat-label {
-        margin: 0;
-        font-size: 12px;
-        letter-spacing: .06em;
-        text-transform: uppercase;
-        color: #6b7280;
-        font-weight: 700;
-    }
-
-    .stat-number {
-        margin: 6px 0 10px;
-        font-size: 38px;
-        line-height: 1;
-        color: #111827;
-        font-weight: 800;
-    }
-
-    .chip {
-        display: inline-block;
-        padding: 6px 10px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 700;
-        background: #eef2ff;
-        color: #3730a3;
-    }
-
-    .dashboard-section {
-        background: #ffffff;
-        border: 1px solid #d1d5db;
-        border-radius: 14px;
-        padding: 18px;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
-        margin-bottom: 18px;
-    }
-
-    .section-title {
-        margin: 0 0 14px;
-        font-size: 19px;
-        font-weight: 700;
-        color: #111827;
-    }
-
-    .grid-2 {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-        gap: 18px;
-    }
-
-    .table-container {
+    .table-wrap {
         overflow-x: auto;
     }
 
-    .dashboard-table {
+    table.dashboard-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
@@ -137,100 +227,76 @@
 
     .dashboard-table th,
     .dashboard-table td {
-        padding: 12px 14px;
-        border-bottom: 1px solid #f1f5f9;
+        padding: 11px 12px;
+        font-size: 13px;
+        border-bottom: 1px solid #e9eff5;
         text-align: left;
-        font-size: 14px;
     }
 
     .dashboard-table th {
-        background: #f8fafc;
         color: #334155;
-        font-weight: 700;
+        background: #f8fafc;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .03em;
     }
 
     .dashboard-table tr:hover td {
-        background: #eef6ff;
+        background: #f8fcff;
     }
 
     .badge {
         display: inline-block;
-        padding: 4px 10px;
         border-radius: 999px;
-        font-size: 12px;
+        padding: 3px 9px;
+        font-size: 11px;
         font-weight: 700;
     }
 
-    .badge-primary { background: #e0e7ff; color: #3730a3; }
-    .badge-success { background: #dcfce7; color: #166534; }
-    .badge-warning { background: #ffedd5; color: #9a3412; }
+    .badge-brand { background: var(--brand-soft); color: #075985; }
+    .badge-success { background: var(--success-soft); color: var(--success); }
 
-    .muted-empty {
-        color: #94a3b8;
+    .muted {
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .empty {
+        color: var(--muted);
         text-align: center;
     }
 
-    /* Dark mode support (Unfold + generic selectors) */
-    html.dark .dashboard-header h1,
-    body.dark .dashboard-header h1,
-    [data-theme="dark"] .dashboard-header h1 {
-        color: #e5e7eb;
+    .edit-link {
+        color: #0369a1;
+        font-weight: 700;
+        text-decoration: none;
     }
 
-    html.dark .dashboard-header p,
-    body.dark .dashboard-header p,
-    [data-theme="dark"] .dashboard-header p {
-        color: #9ca3af;
+    .edit-link:hover {
+        text-decoration: underline;
     }
 
-    html.dark .stat-card,
-    body.dark .stat-card,
-    [data-theme="dark"] .stat-card,
-    html.dark .dashboard-section,
-    body.dark .dashboard-section,
-    [data-theme="dark"] .dashboard-section {
-        background: #1f2937;
-        border-color: #334155;
-        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
-    }
-
-    html.dark .dashboard-container,
-    body.dark .dashboard-container,
-    [data-theme="dark"] .dashboard-container {
-        background: #0b1220;
-    }
-
-    html.dark .stat-label,
-    body.dark .stat-label,
-    [data-theme="dark"] .stat-label {
-        color: #9ca3af;
-    }
-
-    html.dark .stat-number,
-    body.dark .stat-number,
-    [data-theme="dark"] .stat-number,
-    html.dark .section-title,
-    body.dark .section-title,
-    [data-theme="dark"] .section-title,
-    html.dark .dashboard-table td,
-    body.dark .dashboard-table td,
-    [data-theme="dark"] .dashboard-table td {
-        color: #e5e7eb;
-    }
-
-    html.dark .chip,
-    body.dark .chip,
-    [data-theme="dark"] .chip {
-        background: #1e3a8a;
-        color: #dbeafe;
+    html.dark .dashboard-shell,
+    body.dark .dashboard-shell,
+    [data-theme="dark"] .dashboard-shell {
+        --card: #0f172a;
+        --border: #1e293b;
+        --text-1: #f1f5f9;
+        --text-2: #cbd5e1;
+        --muted: #94a3b8;
+        --bg-1: #020617;
+        --bg-2: #082f49;
+        --brand-soft: #082f49;
+        --success-soft: #052e16;
+        --warn-soft: #431407;
+        background: radial-gradient(circle at top right, #0b2f4a 0%, #020617 48%);
     }
 
     html.dark .dashboard-table th,
     body.dark .dashboard-table th,
     [data-theme="dark"] .dashboard-table th {
-        background: #0b1220;
+        background: #020617;
         color: #cbd5e1;
-        border-bottom-color: #1f2937;
     }
 
     html.dark .dashboard-table th,
@@ -239,218 +305,264 @@
     body.dark .dashboard-table td,
     [data-theme="dark"] .dashboard-table th,
     [data-theme="dark"] .dashboard-table td {
-        border-bottom-color: #1f2937;
+        border-color: #1e293b;
     }
 
     html.dark .dashboard-table tr:hover td,
     body.dark .dashboard-table tr:hover td,
     [data-theme="dark"] .dashboard-table tr:hover td {
-        background: #111c33;
+        background: #0b1328;
     }
 
-    html.dark .badge-primary,
-    body.dark .badge-primary,
-    [data-theme="dark"] .badge-primary {
-        background: #312e81;
-        color: #c7d2fe;
-    }
-
-    html.dark .badge-success,
-    body.dark .badge-success,
-    [data-theme="dark"] .badge-success {
-        background: #14532d;
-        color: #bbf7d0;
-    }
-
-    html.dark .badge-warning,
-    body.dark .badge-warning,
-    [data-theme="dark"] .badge-warning {
-        background: #7c2d12;
+    html.dark .warning-item,
+    body.dark .warning-item,
+    [data-theme="dark"] .warning-item {
+        background: #431407;
+        border-color: #7c2d12;
         color: #fed7aa;
     }
 
-    html.dark .muted-empty,
-    body.dark .muted-empty,
-    [data-theme="dark"] .muted-empty {
-        color: #94a3b8;
+    @media (max-width: 768px) {
+        .dashboard-shell {
+            padding: 14px;
+        }
+
+        .hero h1 {
+            font-size: 24px;
+        }
+
+        .kpi-value {
+            font-size: 26px;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
-    <div class="dashboard-header">
-        <h1>Admin Dashboard</h1>
-        <p>Full platform overview for content and activity.</p>
-    </div>
-    
-    <!-- Statistics Cards -->
-    <div class="stats-grid">
-        <div class="stat-card categories">
-            <div class="stat-top">
-                <p class="stat-label">Total Categories</p>
-                <div class="stat-icon ic-cat">🗂️</div>
-            </div>
-            <div class="stat-number">{{ stats.categories_count }}</div>
-            <span class="chip">catalog</span>
+<div class="dashboard-shell">
+    <div class="hero">
+        <div>
+            <h1>Content Operations Dashboard</h1>
+            <p>Monitor content quality, identify gaps, and jump to high-impact admin actions.</p>
         </div>
-        <div class="stat-card subcategories">
-            <div class="stat-top">
-                <p class="stat-label">Sub Categories</p>
-                <div class="stat-icon ic-sub">🗃️</div>
-            </div>
-            <div class="stat-number">{{ stats.subcategories_count }}</div>
-            <span class="chip">organized</span>
-        </div>
-        <div class="stat-card subjects">
-            <div class="stat-top">
-                <p class="stat-label">Subjects</p>
-                <div class="stat-icon ic-subj">📘</div>
-            </div>
-            <div class="stat-number">{{ stats.subjects_count }}</div>
-            <span class="chip">learning pages</span>
-        </div>
-        <div class="stat-card accordion">
-            <div class="stat-top">
-                <p class="stat-label">Accordion Sections</p>
-                <div class="stat-icon ic-acc">📑</div>
-            </div>
-            <div class="stat-number">{{ stats.accordion_sections_count }}</div>
-            <span class="chip">expandables</span>
-        </div>
-        <div class="stat-card interactive">
-            <div class="stat-top">
-                <p class="stat-label">Interactive Items</p>
-                <div class="stat-icon ic-int">⚡</div>
-            </div>
-            <div class="stat-number">{{ stats.interactive_contents_count }}</div>
-            <span class="chip">media + actions</span>
-        </div>
-        <div class="stat-card users">
-            <div class="stat-top">
-                <p class="stat-label">Total Users</p>
-                <div class="stat-icon ic-user">👥</div>
-            </div>
-            <div class="stat-number">{{ stats.total_users }}</div>
-            <span class="chip">{{ stats.staff_users }} staff</span>
+        <div class="quick-actions">
+            <a class="action-btn action-btn-primary" href="{% url 'admin:content_subject_add' %}">+ New Subject</a>
+            <a class="action-btn action-btn-soft" href="{% url 'admin:content_interactivecontent_add' %}">+ New Interactive Item</a>
+            <a class="action-btn action-btn-soft" href="{% url 'admin:content_accordionsection_add' %}">+ New Accordion</a>
+            <a class="action-btn action-btn-soft" href="{% url 'admin:content_subject_changelist' %}">Manage Subjects</a>
         </div>
     </div>
-    
-    <!-- Content Overview Section -->
-    <div class="grid-2">
-        <!-- Categories Breakdown -->
-        <div class="dashboard-section">
-            <div class="section-title">📊 Categories Overview</div>
-            <div class="table-container">
+
+    <div class="kpi-grid">
+        <article class="kpi-card">
+            <p class="kpi-label">Categories</p>
+            <p class="kpi-value">{{ stats.categories_count }}</p>
+            <p class="kpi-footnote">{{ health.categories_without_subcategories }} empty</p>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-label">Sub Categories</p>
+            <p class="kpi-value">{{ stats.subcategories_count }}</p>
+            <p class="kpi-footnote">{{ health.subcategories_without_subjects }} without subjects</p>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-label">Subjects</p>
+            <p class="kpi-value">{{ stats.subjects_count }}</p>
+            <p class="kpi-footnote">{{ health.subjects_without_interactive }} missing interactive content</p>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-label">Interactive Items</p>
+            <p class="kpi-value">{{ stats.interactive_contents_count }}</p>
+            <p class="kpi-footnote">avg {{ health.average_interactive_per_subject }} per subject</p>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-label">Accordion Sections</p>
+            <p class="kpi-value">{{ stats.accordion_sections_count }}</p>
+            <p class="kpi-footnote">structured side content</p>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-label">Admin Users</p>
+            <p class="kpi-value">{{ stats.staff_users }}</p>
+            <p class="kpi-footnote">{{ stats.total_users }} total users</p>
+        </article>
+    </div>
+
+    <div class="split-grid">
+        <section class="panel">
+            <h2>Content Health</h2>
+            <div class="health-row">
+                <label>
+                    <span>Subjects with interactive content</span>
+                    <span>{{ health.subject_coverage }}%</span>
+                </label>
+                <div class="meter"><span style="width: {{ health.subject_coverage }}%;"></span></div>
+            </div>
+            <div class="health-row">
+                <label>
+                    <span>Subjects covered</span>
+                    <span>{{ health.subjects_with_interactive }} / {{ stats.subjects_count }}</span>
+                </label>
+                <div class="meter"><span style="width: {{ health.subject_coverage }}%;"></span></div>
+            </div>
+            <p class="muted">Target: keep this above 80% so most subject pages feel interactive.</p>
+        </section>
+
+        <section class="panel">
+            <h2>Actionable Gaps</h2>
+            <ul class="warning-list">
+                <li class="warning-item">
+                    <span>Categories without subcategories</span>
+                    <strong>{{ health.categories_without_subcategories }}</strong>
+                </li>
+                <li class="warning-item">
+                    <span>Subcategories without subjects</span>
+                    <strong>{{ health.subcategories_without_subjects }}</strong>
+                </li>
+                <li class="warning-item">
+                    <span>Subjects without interactive content</span>
+                    <strong>{{ health.subjects_without_interactive }}</strong>
+                </li>
+            </ul>
+        </section>
+    </div>
+
+    <div class="split-grid">
+        <section class="panel">
+            <h2>Category Load</h2>
+            <div class="table-wrap">
                 <table class="dashboard-table">
                     <thead>
                         <tr>
                             <th>Category</th>
                             <th>Subjects</th>
+                            <th>Go</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for cat in categories_with_counts %}
                         <tr>
                             <td>{{ cat.name }}</td>
-                            <td><span class="badge badge-primary">{{ cat.subject_count }}</span></td>
+                            <td><span class="badge badge-brand">{{ cat.subject_count }}</span></td>
+                            <td><a class="edit-link" href="{% url 'admin:content_category_change' cat.id %}">Edit</a></td>
                         </tr>
                         {% empty %}
-                        <tr>
-                            <td colspan="2" class="muted-empty">No categories yet</td>
-                        </tr>
+                        <tr><td colspan="3" class="empty">No categories available yet.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-        </div>
-        
-        <!-- Content Types Distribution -->
-        <div class="dashboard-section">
-            <div class="section-title">📁 Content Types Distribution</div>
-            <div class="table-container">
+        </section>
+
+        <section class="panel">
+            <h2>Interactive Media Mix</h2>
+            <div class="table-wrap">
                 <table class="dashboard-table">
                     <thead>
                         <tr>
                             <th>Type</th>
                             <th>Count</th>
+                            <th>Share</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in content_types_dist %}
                         <tr>
-                            <td>{{ item.content_type|title }}</td>
+                            <td>{{ item.label }}</td>
                             <td><span class="badge badge-success">{{ item.count }}</span></td>
+                            <td>{{ item.percentage }}%</td>
                         </tr>
                         {% empty %}
-                        <tr>
-                            <td colspan="2" class="muted-empty">No interactive content yet</td>
-                        </tr>
+                        <tr><td colspan="3" class="empty">No interactive content yet.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-        </div>
+        </section>
     </div>
-    
-    <!-- Latest Subjects Section -->
-    <div class="dashboard-section">
-        <div class="section-title">📚 Latest Subjects</div>
-        <div class="table-container">
+
+    <section class="panel" style="margin-bottom: 14px;">
+        <h2>Top Subjects by Interactive Density</h2>
+        <div class="table-wrap">
             <table class="dashboard-table">
                 <thead>
                     <tr>
-                        <th>Title</th>
-                        <th>Category</th>
-                            <th>Updated</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for subject in latest_subjects %}
-                    <tr>
-                        <td><strong>{{ subject.title }}</strong></td>
-                        <td>{{ subject.subcategory.category.name }}</td>
-                        <td>{{ subject.updated_at|date:"d M Y H:i" }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                            <td colspan="3" class="muted-empty">No subjects yet</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
-    <!-- Latest Interactive Content Section -->
-    <div class="dashboard-section">
-        <div class="section-title">✨ Latest Interactive Content</div>
-        <div class="table-container">
-            <table class="dashboard-table">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Type</th>
                         <th>Subject</th>
-                        <th>Created</th>
+                        <th>Category</th>
+                        <th>Interactive Items</th>
+                        <th>Go</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for content in latest_contents %}
+                    {% for subject in top_subjects_by_content %}
                     <tr>
-                        <td><strong>{{ content.title }}</strong></td>
-                            <td><span class="badge badge-warning">{{ content.content_type|title }}</span></td>
-                        <td>{{ content.subject.title }}</td>
-                        <td>{{ content.created_at|date:"d M Y H:i" }}</td>
+                        <td>{{ subject.title }}</td>
+                        <td>{{ subject.subcategory.category.name }}</td>
+                        <td><span class="badge badge-brand">{{ subject.interactive_total }}</span></td>
+                        <td><a class="edit-link" href="{% url 'admin:content_subject_change' subject.id %}">Edit</a></td>
                     </tr>
                     {% empty %}
-                    <tr>
-                            <td colspan="4" class="muted-empty">No interactive content yet</td>
-                    </tr>
+                    <tr><td colspan="4" class="empty">No subjects available yet.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+    </section>
+
+    <div class="split-grid">
+        <section class="panel">
+            <h2>Recently Updated Subjects</h2>
+            <div class="table-wrap">
+                <table class="dashboard-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Updated</th>
+                            <th>Go</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subject in latest_subjects %}
+                        <tr>
+                            <td>{{ subject.title }}</td>
+                            <td>{{ subject.subcategory.category.name }}</td>
+                            <td>{{ subject.updated_at|date:"d M Y, H:i" }}</td>
+                            <td><a class="edit-link" href="{% url 'admin:content_subject_change' subject.id %}">Edit</a></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="empty">No subjects updated yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Recently Added Interactive Items</h2>
+            <div class="table-wrap">
+                <table class="dashboard-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Subject</th>
+                            <th>Go</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for content in latest_contents %}
+                        <tr>
+                            <td>{{ content.title }}</td>
+                            <td><span class="badge badge-success">{{ content.get_content_type_display }}</span></td>
+                            <td>{{ content.subject.title }}</td>
+                            <td><a class="edit-link" href="{% url 'admin:content_interactivecontent_change' content.id %}">Edit</a></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="empty">No interactive items yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 </div>
 {% endblock %}

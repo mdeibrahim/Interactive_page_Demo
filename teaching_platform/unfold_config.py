@@ -25,7 +25,7 @@ UNFOLD = {
             {
                 "title": "Content Management",
                 "separator": True,
-                "collapsible": True,
+                "collapsible": False,
                 "items": [
                     {
                         "title": "Categories",
@@ -57,7 +57,7 @@ UNFOLD = {
             {
                 "title": "Authentication",
                 "separator": True,
-                "collapsible": True,
+                "collapsible": False,
                 "items": [
                     {
                         "title": "Users",
