@@ -8,3 +8,4 @@ django-unfold==0.89.0
 sqlparse==0.5.5
 tzdata==2026.1
 uvicorn==0.44.0
+gunicorn==23.0.0
