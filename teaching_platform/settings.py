@@ -137,7 +137,7 @@ else:
 
 try:
     MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
-except PermissionError:
+except OSError:
     # Last-resort writable location on containerized platforms
     MEDIA_ROOT = Path('/tmp/interactive-media')
     MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
