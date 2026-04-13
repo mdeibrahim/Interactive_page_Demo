@@ -124,10 +124,24 @@ STORAGES = {
 }
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = config('MEDIA_ROOT', default=str(BASE_DIR / 'media'))
+MEDIA_ROOT_ENV = config('MEDIA_ROOT', default='').strip()
+RENDER_DISK_PATH = config('RENDER_DISK_PATH', default='').strip()
 
-# Render persistent disk support (if mounted at /var/data)
-if config('RENDER', default='') and not config('MEDIA_ROOT', default=''):
-    MEDIA_ROOT = '/var/data/media'
+if MEDIA_ROOT_ENV:
+    MEDIA_ROOT = Path(MEDIA_ROOT_ENV)
+elif RENDER_DISK_PATH:
+    MEDIA_ROOT = Path(RENDER_DISK_PATH) / 'media'
+else:
+    # Safe default for local and Render instances without a mounted disk
+    MEDIA_ROOT = BASE_DIR / 'media'
+
+try:
+    MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+except PermissionError:
+    # Last-resort writable location on containerized platforms
+    MEDIA_ROOT = Path('/tmp/interactive-media')
+    MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+
+MEDIA_ROOT = str(MEDIA_ROOT)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
