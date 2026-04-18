@@ -2,57 +2,206 @@
 
 {% block title %}{{ subcategory.name }} — {{ category.name }} — Teaching Platform{% endblock %}
 
+{% block extra_css %}
+<style>
+    .desc-clamp {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
+
 {% block breadcrumb %}
-<nav class="breadcrumb-bar">
-    <div class="container">
-        <ol class="breadcrumb">
-            <li><a href="{% url 'content:home' %}"><i class="fa-solid fa-house"></i></a></li>
-            <li><a href="{% url 'content:category_detail' category.slug %}">{{ category.name }}</a></li>
-            <li class="active">{{ subcategory.name }}</li>
+<nav class="border-y border-slate-200 bg-slate-100/80">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <ol class="flex items-center gap-3 py-3 text-sm text-slate-600">
+            <li><a href="{% url 'content:home' %}" class="hover:text-slate-900"><i class="fa-solid fa-house"></i></a></li>
+            <li>/</li>
+            <li><a href="{% url 'content:category_detail' category.slug %}" class="hover:text-slate-900">{{ category.name }}</a></li>
+            <li>/</li>
+            <li class="font-semibold text-slate-800">{{ subcategory.name }}</li>
         </ol>
     </div>
 </nav>
 {% endblock %}
 
 {% block content %}
-<div class="container section-gap">
-    <div class="page-header">
-        <div class="page-header-icon"><i class="fa-solid fa-book-bookmark"></i></div>
-        <div>
-            <p class="page-parent">{{ category.name }}</p>
-            <h1 class="page-title">{{ subcategory.name }}</h1>
-            {% if subcategory.description %}
-            <p class="page-desc">{{ subcategory.description }}</p>
-            {% endif %}
+<section class="py-8 sm:py-10">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid gap-6 lg:grid-cols-12 lg:items-start">
+            <div class="space-y-5 lg:col-span-8">
+                <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div class="relative h-56 bg-gradient-to-r from-cyan-800 via-blue-700 to-indigo-700 sm:h-72">
+                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.2),transparent_40%)]"></div>
+                        <div class="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+                            <i class="fa-solid fa-layer-group"></i>
+                            {{ category.name }}
+                        </div>
+                        <div class="absolute bottom-6 left-6 right-6">
+                            <h1 class="font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">{{ subcategory.name }}</h1>
+                            <p class="mt-2 text-sm text-cyan-50 sm:text-base">Smart, focused and exam-ready course</p>
+                        </div>
+                        <div class="absolute right-6 top-1/2 -translate-y-1/2 rounded-full bg-red-600/90 p-4 text-white shadow-lg">
+                            <i class="fa-solid fa-play text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                    <h2 class="text-xl font-bold text-slate-900"><i class="fa-solid fa-circle-info text-blue-600"></i> কোর্স সম্পর্কে</h2>
+                    <p class="mt-3 text-slate-600">
+                        {{ subcategory.description|default:"এই কোর্সে ধাপে ধাপে fundamentals থেকে advanced topic পর্যন্ত শেখানো হবে, যাতে learner সহজে concept বুঝে exam-ready হতে পারে।" }}
+                    </p>
+
+                    <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div class="rounded-xl bg-slate-50 p-3">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Course Type</p>
+                            <p class="mt-1 font-semibold text-slate-800">Self-paced course</p>
+                        </div>
+                        <div class="rounded-xl bg-slate-50 p-3">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Lessons Included</p>
+                            <p class="mt-1 font-semibold text-slate-800">{{ subjects.count }} lessons</p>
+                        </div>
+                        <div class="rounded-xl bg-slate-50 p-3">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Created Date</p>
+                            <p class="mt-1 font-semibold text-slate-800">{{ subcategory.created_at|date:"M d, Y" }}</p>
+                        </div>
+                        <div class="rounded-xl bg-slate-50 p-3">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Access</p>
+                            {% if has_access %}
+                            <p class="mt-1 font-semibold text-emerald-700"><i class="fa-solid fa-circle-check"></i> Ready to learn</p>
+                            {% else %}
+                            <p class="mt-1 font-semibold text-rose-700"><i class="fa-solid fa-lock"></i> Purchase required</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                    <h2 class="text-xl font-bold text-slate-900"><i class="fa-solid fa-list-ul text-blue-600"></i> কোর্স কনটেন্ট</h2>
+
+                    {% if subjects %}
+                    <div class="mt-4 space-y-3">
+                        {% for subject in subjects %}
+                        {% if has_access %}
+                        <a href="{% url 'content:subject_detail' category.slug subcategory.slug subject.slug %}" class="group flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-slate-300 hover:bg-white">
+                            <div class="flex min-w-0 items-start gap-3">
+                                <span class="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">{{ forloop.counter }}</span>
+                                <div class="min-w-0">
+                                    <h3 class="truncate text-sm font-semibold text-slate-800 sm:text-base">{{ subject.title }}</h3>
+                                    <div class="mt-1 flex flex-wrap gap-3 text-xs text-slate-500">
+                                        <span><i class="fa-solid fa-layer-group"></i> {{ subject.accordion_sections.count }} sections</span>
+                                        <span><i class="fa-solid fa-link"></i> {{ subject.interactive_contents.count }} items</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-angle-right text-slate-400 transition group-hover:text-slate-700"></i>
+                        </a>
+                        {% else %}
+                        <div class="flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+                            <div class="flex min-w-0 items-start gap-3">
+                                <span class="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-xs font-bold text-white">{{ forloop.counter }}</span>
+                                <div class="min-w-0">
+                                    <h3 class="truncate text-sm font-semibold text-slate-800 sm:text-base">{{ subject.title }}</h3>
+                                    <p class="mt-1 text-xs font-medium text-rose-700"><i class="fa-solid fa-lock"></i> Unlock to access this lesson</p>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-lock text-rose-500"></i>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-slate-600">
+                        No lessons added yet.
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if related_subcategories %}
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                    <h2 class="text-xl font-bold text-slate-900"><i class="fa-solid fa-shuffle text-blue-600"></i> সম্পর্কিত কোর্স</h2>
+                    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                        {% for rel in related_subcategories %}
+                        <a href="{% url 'content:category_details' category.slug rel.slug %}" class="group overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:shadow-md">
+                            <div class="h-24 bg-gradient-to-r from-violet-700 via-fuchsia-600 to-rose-500 p-3 text-white">
+                                <p class="inline-flex rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold">{{ category.name|truncatechars:15 }}</p>
+                                <h3 class="mt-2 truncate text-lg font-bold text-amber-300">{{ rel.name }}</h3>
+                            </div>
+                            <div class="p-3">
+                                <p class="desc-clamp text-sm text-slate-600">{{ rel.description|default:"Structured and practical learning course." }}</p>
+                                <div class="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                                    <span class="rounded-full bg-blue-100 px-2.5 py-1 text-blue-700"><i class="fa-solid fa-file-lines"></i> {{ rel.subjects.count }} lessons</span>
+                                    {% if rel.is_free %}
+                                    <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-700"><i class="fa-solid fa-gift"></i> Free</span>
+                                    {% else %}
+                                    <span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-700"><i class="fa-solid fa-tag"></i> ৳{{ rel.price }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <aside class="lg:col-span-4">
+                <div class="sticky top-24 space-y-4">
+                    <div class="overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-b from-blue-800 to-blue-900 text-white shadow-lg">
+                        <div class="h-28 bg-gradient-to-r from-amber-500/20 to-rose-500/20 p-4">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-blue-100">{{ category.name }}</p>
+                            <h3 class="mt-1 text-xl font-extrabold text-amber-300">{{ subcategory.name }}</h3>
+                        </div>
+                        <div class="space-y-3 p-4">
+                            <div class="text-3xl font-extrabold">
+                                {% if subcategory.is_free %}
+                                Free
+                                {% else %}
+                                ৳{{ subcategory.price }}
+                                {% endif %}
+                            </div>
+                            <div class="space-y-1 text-sm text-blue-100">
+                                <p><i class="fa-regular fa-clock"></i> Self-paced</p>
+                                <p><i class="fa-solid fa-file-lines"></i> {{ subjects.count }} lessons</p>
+                                <p><i class="fa-solid fa-language"></i> বাংলা</p>
+                            </div>
+
+                            {% if has_access %}
+                            <a href="#" onclick="event.preventDefault(); document.querySelector('#course-list-jump').scrollIntoView({behavior:'smooth'});" class="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-yellow-400 px-4 py-2.5 font-bold text-slate-900 transition hover:bg-yellow-300">
+                                এখনই শিখুন
+                            </a>
+                            {% elif user.is_authenticated %}
+                            <form method="post" action="{% url 'content:buy_module' category.slug subcategory.slug %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <button type="submit" class="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-yellow-400 px-4 py-2.5 font-bold text-slate-900 transition hover:bg-yellow-300">
+                                    {% if subcategory.is_free %}এখনই ফ্রি আনলক{% else %}এখনই কিনুন{% endif %}
+                                </button>
+                            </form>
+                            {% else %}
+                            <a href="{% url 'content:login' %}?next={{ request.path }}" class="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-yellow-400 px-4 py-2.5 font-bold text-slate-900 transition hover:bg-yellow-300">
+                                লগইন করে কিনুন
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div id="course-list-jump" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <h3 class="text-lg font-bold text-slate-900">কুইক ইনফো</h3>
+                        <ul class="mt-3 space-y-2 text-sm text-slate-600">
+                            <li class="flex items-start gap-2"><i class="fa-solid fa-circle-check mt-1 text-emerald-600"></i> Lifetime access after purchase</li>
+                            <li class="flex items-start gap-2"><i class="fa-solid fa-circle-check mt-1 text-emerald-600"></i> Structured lessons and resources</li>
+                            <li class="flex items-start gap-2"><i class="fa-solid fa-circle-check mt-1 text-emerald-600"></i> Interactive explanation support</li>
+                            <li class="flex items-start gap-2"><i class="fa-solid fa-circle-check mt-1 text-emerald-600"></i> Mobile and desktop friendly</li>
+                        </ul>
+                    </div>
+                </div>
+            </aside>
         </div>
     </div>
-
-    {% if subjects %}
-    <div class="subjects-list">
-        {% for subject in subjects %}
-        <a href="{% url 'content:subject_detail' category.slug subcategory.slug subject.slug %}" class="subject-item">
-            <div class="subject-num">{{ forloop.counter }}</div>
-            <div class="subject-info">
-                <h3 class="subject-title">{{ subject.title }}</h3>
-                <div class="subject-meta">
-                    <span><i class="fa-solid fa-layer-group"></i> {{ subject.accordion_sections.count }} sections</span>
-                    <span><i class="fa-solid fa-link"></i> {{ subject.interactive_contents.count }} interactive items</span>
-                    <span><i class="fa-regular fa-clock"></i> Updated {{ subject.updated_at|date:"M d, Y" }}</span>
-                </div>
-            </div>
-            <div class="subject-arrow"><i class="fa-solid fa-arrow-right"></i></div>
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="empty-state">
-        <div class="empty-icon"><i class="fa-solid fa-file-lines"></i></div>
-        <h2>No Subjects Yet</h2>
-        <p>Add subjects under <strong>{{ subcategory.name }}</strong> from the admin panel.</p>
-        <a href="/admin/content/subject/add/" class="btn btn-primary" target="_blank">
-            <i class="fa-solid fa-plus"></i> Add Subject
-        </a>
-    </div>
-    {% endif %}
-</div>
+</section>
 {% endblock %}

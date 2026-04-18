@@ -2,99 +2,299 @@
 
 {% block title %}Home — Interactive Teaching Platform{% endblock %}
 
+{% block extra_css %}
+<style>
+    .course-desc {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .hero-orb {
+        animation: floatY 9s ease-in-out infinite;
+    }
+
+    .hero-orb--delay {
+        animation-delay: 1.8s;
+    }
+
+    .reveal-up {
+        animation: revealUp 0.8s ease both;
+    }
+
+    .reveal-up-2 {
+        animation: revealUp 0.9s ease 0.12s both;
+    }
+
+    .reveal-up-3 {
+        animation: revealUp 1s ease 0.24s both;
+    }
+
+    @keyframes floatY {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-12px); }
+    }
+
+    @keyframes revealUp {
+        from {
+            opacity: 0;
+            transform: translateY(18px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- Hero Section -->
-<section class="hero">
-    <div class="hero-bg"></div>
-    <div class="hero-content container">
-        <div class="hero-badge"><i class="fa-solid fa-bolt"></i> Interactive Learning</div>
-        <h1 class="hero-title">Interactive Teaching Platform</h1>
-        <p class="hero-subtitle">Explore subjects with rich multimedia content — click highlighted terms to reveal explanations, images, audio, video and more.</p>
-        {% if not categories %}
-        <a href="/admin/" class="btn btn-primary" target="_blank">
-            <i class="fa-solid fa-plus"></i> Add Content via Admin
-        </a>
-        {% endif %}
-    </div>
-    <div class="hero-waves">
-        <svg viewBox="0 0 1440 80" preserveAspectRatio="none">
-            <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="var(--bg-primary)"/>
-        </svg>
+<section class="relative overflow-hidden pb-10 pt-14 sm:pb-14 lg:pt-20">
+    <div class="absolute inset-0 -z-20 bg-[radial-gradient(950px_340px_at_8%_-5%,rgba(244,63,94,0.24),transparent),radial-gradient(880px_360px_at_92%_-12%,rgba(14,165,233,0.26),transparent),linear-gradient(180deg,#fff7ed_0%,#f8fafc_48%,#eef2ff_100%)]"></div>
+    <div class="hero-orb absolute -left-10 top-16 -z-10 h-32 w-32 rounded-full bg-gradient-to-br from-rose-400/40 to-fuchsia-400/20 blur-2xl"></div>
+    <div class="hero-orb hero-orb--delay absolute right-2 top-24 -z-10 h-40 w-40 rounded-full bg-gradient-to-br from-cyan-400/40 to-indigo-500/25 blur-2xl sm:right-10"></div>
+
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid items-center gap-8 lg:grid-cols-2">
+            <div>
+                <span class="reveal-up inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white/80 px-4 py-1.5 text-xs font-bold tracking-wide text-rose-700 backdrop-blur sm:text-sm">
+                    <i class="fa-solid fa-sparkles"></i>
+                    FUTURE-READY LEARNING
+                </span>
+
+                <h1 class="reveal-up-2 mt-5 font-display text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
+                    Learn Smarter with
+                    <span class="bg-gradient-to-r from-rose-500 via-orange-500 to-cyan-600 bg-clip-text text-transparent">Colorful Interactive Lessons</span>
+                </h1>
+
+                <p class="reveal-up-3 mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
+                    Structured categories, unlockable courses, and rich media experiences in one place. Study with engaging text, image, audio, and video based lessons.
+                </p>
+
+                <div class="reveal-up-3 mt-8 flex flex-wrap gap-3">
+                    <a href="#categories" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-rose-500/25 transition hover:scale-[1.02] hover:from-rose-600 hover:to-orange-600 sm:text-base">
+                        <i class="fa-solid fa-compass"></i>
+                        Explore Categories
+                    </a>
+                    <a href="{% url 'content:my_courses' %}" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white/90 px-5 py-3 text-sm font-semibold text-slate-700 backdrop-blur transition hover:bg-slate-100 sm:text-base">
+                        <i class="fa-solid fa-book-open-reader"></i>
+                        My Courses
+                    </a>
+                </div>
+
+                <div class="mt-8 grid gap-3 sm:grid-cols-3">
+                    <div class="rounded-2xl border border-white/70 bg-white/75 px-4 py-3 shadow-sm backdrop-blur">
+                        <p class="text-xl font-extrabold text-slate-900">{{ categories|length }}+</p>
+                        <p class="text-xs uppercase tracking-wide text-slate-500">Categories</p>
+                    </div>
+                    <div class="rounded-2xl border border-white/70 bg-white/75 px-4 py-3 shadow-sm backdrop-blur">
+                        <p class="text-xl font-extrabold text-slate-900">24/7</p>
+                        <p class="text-xs uppercase tracking-wide text-slate-500">Access</p>
+                    </div>
+                    <div class="rounded-2xl border border-white/70 bg-white/75 px-4 py-3 shadow-sm backdrop-blur">
+                        <p class="text-xl font-extrabold text-slate-900">100%</p>
+                        <p class="text-xs uppercase tracking-wide text-slate-500">Mobile Ready</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reveal-up-2">
+                <div class="relative rounded-3xl border border-white/70 bg-white/70 p-4 shadow-xl shadow-slate-900/10 backdrop-blur sm:p-6">
+                    <div class="absolute -right-3 -top-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-3 py-1 text-xs font-bold text-white shadow">
+                        New Experience
+                    </div>
+                    <div class="grid gap-3">
+                        <div class="rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 p-4 text-white">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-cyan-100">Interactive Content</p>
+                            <p class="mt-1 text-lg font-bold">Text, Audio, Video, YouTube</p>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                                <p class="text-sm font-semibold text-slate-900"><i class="fa-solid fa-brain text-violet-600"></i> Smart Learning</p>
+                                <p class="mt-1 text-sm text-slate-600">Micro sections with focused explanations.</p>
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                                <p class="text-sm font-semibold text-slate-900"><i class="fa-solid fa-layer-group text-emerald-600"></i> Structured Flow</p>
+                                <p class="mt-1 text-sm text-slate-600">Category to subject journey for clarity.</p>
+                            </div>
+                        </div>
+                        <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
+                            <i class="fa-solid fa-bolt text-amber-500"></i>
+                            Perfect for school, college and exam-focused learners.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
-<!-- Categories Grid -->
-<div class="container section-gap">
-    {% if categories %}
-    <div class="section-header">
-        <h2 class="section-title">Browse Categories</h2>
-        <p class="section-desc">Select a category to explore subjects and interactive lessons.</p>
-    </div>
-    <div class="cards-grid">
-        {% for cat in categories %}
-        <a href="{% url 'content:category_detail' cat.slug %}" class="card card--category">
-            <div class="card-icon">
-                <i class="fa-solid fa-folder-open"></i>
+<section id="categories" class="pb-12 sm:pb-14">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        {% if categories %}
+        <div class="mb-8 text-center">
+            <h2 class="font-display text-3xl font-bold text-slate-900 sm:text-4xl">Popular Learning Categories</h2>
+            <p class="mt-2 text-slate-600">Choose your track and start progressing with confidence.</p>
+        </div>
+
+        <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {% for cat in categories %}
+            <a href="{% if cat.default_detail_slug %}{% url 'content:category_details' cat.slug cat.default_detail_slug %}{% else %}{% url 'content:category_detail' cat.slug %}{% endif %}" class="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div class="relative h-44 overflow-hidden bg-gradient-to-r from-violet-700 via-fuchsia-600 to-rose-500 p-5 text-white">
+                    <div class="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/20"></div>
+                    <div class="absolute right-8 top-6 h-10 w-10 rounded-full border-4 border-white/35"></div>
+                    <div class="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                        Featured Category
+                    </div>
+                    <h3 class="mt-4 text-3xl font-bold tracking-tight text-amber-300">{{ cat.name|truncatechars:18 }}</h3>
+                    <p class="mt-1 text-base font-medium text-white/90">Learning Track</p>
+                </div>
+
+                <div class="p-5">
+                    <div class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                        {{ cat.name|truncatechars:14 }}
+                    </div>
+                    <h3 class="mt-4 text-2xl font-extrabold leading-tight text-slate-900">{{ cat.name }}</h3>
+                    <p class="course-desc mt-2 text-sm leading-6 text-slate-600">{{ cat.description|default:"এই category-তে structured course, detailed lesson, এবং interactive content পাওয়া যাবে।" }}</p>
+
+                    <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+                        <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-blue-700">
+                            <i class="fa-solid fa-layer-group"></i> {{ cat.subcategories.count }} courses
+                        </span>
+                        <span class="inline-flex items-center gap-1 rounded-full bg-violet-100 px-3 py-1 text-violet-700">
+                            <i class="fa-solid fa-book-open"></i> Guided Learning
+                        </span>
+                    </div>
+
+                    <div class="mt-5 flex items-center justify-between">
+                        <div class="text-sm text-slate-500">
+                            <span class="font-medium text-slate-700">Updated:</span>
+                            {{ cat.created_at|date:"M d, Y" }}
+                        </div>
+                        <span class="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-base font-extrabold text-slate-900 transition group-hover:bg-yellow-300">
+                            বিস্তারিত দেখুন
+                            <i class="fa-solid fa-arrow-right text-sm"></i>
+                        </span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center shadow-sm sm:px-10">
+            <div class="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                <i class="fa-solid fa-book-open"></i>
             </div>
-            <div class="card-body">
-                <h3 class="card-title">{{ cat.name }}</h3>
-                <p class="card-desc">{{ cat.description|default:"Explore subjects in this category." }}</p>
-                <div class="card-meta">
-                    <span><i class="fa-solid fa-layer-group"></i> {{ cat.subcategories.count }} sub-categories</span>
+            <h2 class="mt-4 text-2xl font-bold text-slate-900">No Content Yet</h2>
+            <p class="mt-2 text-slate-600">Content এখনো available হয়নি। একটু পরে আবার চেক করুন।</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<section id="lecturers" class="pb-12 sm:pb-14">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mb-8 text-center">
+            <h2 class="font-display text-3xl font-bold text-slate-900 sm:text-4xl">Meet Our Expert Lecturers</h2>
+            <p class="mt-2 text-slate-600">স্কুল, কলেজ এবং admission প্রস্তুতির জন্য experienced mentors.</p>
+        </div>
+
+        <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <article class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div class="flex items-center gap-3">
+                    <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-rose-100 to-orange-100 text-rose-600">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Md. Arif Hasan</h3>
+                        <p class="text-xs text-slate-500">Math Lecturer</p>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm leading-6 text-slate-600">HSC + Admission math problem-solving expert with shortcut-based techniques.</p>
+                <div class="mt-4 inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
+                    <i class="fa-solid fa-award"></i> 8+ Years Experience
+                </div>
+            </article>
+
+            <article class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div class="flex items-center gap-3">
+                    <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-100 to-blue-100 text-cyan-700">
+                        <i class="fa-solid fa-flask-vial"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Sharmeen Akter</h3>
+                        <p class="text-xs text-slate-500">Chemistry Lecturer</p>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm leading-6 text-slate-600">Concept-first chemistry teaching with visual examples and quick revision notes.</p>
+                <div class="mt-4 inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">
+                    <i class="fa-solid fa-award"></i> 6+ Years Experience
+                </div>
+            </article>
+
+            <article class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div class="flex items-center gap-3">
+                    <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-100 to-fuchsia-100 text-violet-700">
+                        <i class="fa-solid fa-atom"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Tanvir Rahman</h3>
+                        <p class="text-xs text-slate-500">Physics Lecturer</p>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm leading-6 text-slate-600">Real-life physics applications and exam-oriented CQ/MCQ strategy sessions.</p>
+                <div class="mt-4 inline-flex items-center gap-2 rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
+                    <i class="fa-solid fa-award"></i> 7+ Years Experience
+                </div>
+            </article>
+
+            <article class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div class="flex items-center gap-3">
+                    <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 text-emerald-700">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Nusrat Jahan</h3>
+                        <p class="text-xs text-slate-500">English Lecturer</p>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm leading-6 text-slate-600">Grammar to writing mastery with practical exercises and spoken practice support.</p>
+                <div class="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                    <i class="fa-solid fa-award"></i> 5+ Years Experience
+                </div>
+            </article>
+        </div>
+
+        <div class="mt-6 text-center">
+            <a href="#categories" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-100">
+                <i class="fa-solid fa-circle-play"></i>
+                Start Learning with Our Lecturers
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="pb-14">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-violet-700 via-fuchsia-700 to-rose-600 p-6 text-white shadow-xl shadow-violet-700/20 sm:p-8">
+            <div class="absolute -right-12 top-0 h-36 w-36 rounded-full bg-white/20 blur-2xl"></div>
+            <div class="absolute -left-12 bottom-0 h-36 w-36 rounded-full bg-amber-300/25 blur-2xl"></div>
+
+            <div class="relative grid gap-6 lg:grid-cols-2 lg:items-center">
+                <div>
+                    <h3 class="text-2xl font-bold sm:text-3xl">Make every study session inspiring</h3>
+                    <p class="mt-2 text-sm text-fuchsia-100 sm:text-base">Your complete digital classroom with visually rich, modular content and focused learning paths.</p>
+                </div>
+                <div class="flex flex-wrap gap-2 lg:justify-end">
+                    <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1.5 text-xs font-semibold sm:text-sm"><i class="fa-solid fa-image"></i> Image</span>
+                    <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1.5 text-xs font-semibold sm:text-sm"><i class="fa-solid fa-headphones"></i> Audio</span>
+                    <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1.5 text-xs font-semibold sm:text-sm"><i class="fa-brands fa-youtube"></i> YouTube</span>
+                    <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1.5 text-xs font-semibold sm:text-sm"><i class="fa-solid fa-video"></i> Video</span>
                 </div>
             </div>
-            <div class="card-arrow"><i class="fa-solid fa-arrow-right"></i></div>
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="empty-state">
-        <div class="empty-icon"><i class="fa-solid fa-book-open"></i></div>
-        <h2>No Content Yet</h2>
-        <p>Start by adding categories, subcategories, and subjects through the admin panel.</p>
-        <a href="/admin/" class="btn btn-primary" target="_blank">
-            <i class="fa-solid fa-gear"></i> Open Admin Panel
-        </a>
-    </div>
-    {% endif %}
-</div>
-
-<!-- Feature Highlights -->
-<section class="features-section container">
-    <div class="section-header">
-        <h2 class="section-title">Platform Features</h2>
-        <p class="section-desc">Everything you need for an interactive learning experience</p>
-    </div>
-    <div class="features-grid">
-        <div class="feature-card">
-            <div class="feature-icon feature-icon--blue"><i class="fa-solid fa-font"></i></div>
-            <h3>Rich Text</h3>
-            <p>Bold, italic, underline formatting — just like Microsoft Word.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon feature-icon--purple"><i class="fa-solid fa-image"></i></div>
-            <h3>Images</h3>
-            <p>Click highlighted terms to reveal descriptive images.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon feature-icon--green"><i class="fa-solid fa-headphones"></i></div>
-            <h3>Audio</h3>
-            <p>Play audio explanations directly in a modal popup.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon feature-icon--red"><i class="fa-brands fa-youtube"></i></div>
-            <h3>YouTube Videos</h3>
-            <p>Embed YouTube videos for visual explanations.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon feature-icon--orange"><i class="fa-solid fa-video"></i></div>
-            <h3>Local Videos</h3>
-            <p>Upload and play your own video content.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon feature-icon--teal"><i class="fa-solid fa-layer-group"></i></div>
-            <h3>Accordion Sections</h3>
-            <p>Expandable sidebar for Introduction, Details, Resources.</p>
         </div>
     </div>
 </section>

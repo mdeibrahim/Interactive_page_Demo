@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Signup Choice — Teaching Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .choice-orb {
+        animation: floatY 10s ease-in-out infinite;
+    }
+
+    .choice-orb--delay {
+        animation-delay: 1.6s;
+    }
+
+    .choice-card {
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    .choice-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.35), transparent 52%);
+        opacity: 0;
+        transition: opacity .28s ease;
+        z-index: -1;
+    }
+
+    .choice-card:hover::before {
+        opacity: 1;
+    }
+
+    @keyframes floatY {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-12px); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="relative overflow-hidden pb-12 pt-14 sm:pb-16 lg:pt-20">
+    <div class="absolute inset-0 -z-20 bg-[radial-gradient(980px_400px_at_8%_-5%,rgba(244,63,94,0.2),transparent),radial-gradient(900px_360px_at_92%_-12%,rgba(14,165,233,0.25),transparent),linear-gradient(180deg,#fff7ed_0%,#f8fafc_52%,#eef2ff_100%)]"></div>
+    <div class="choice-orb absolute -left-10 top-16 -z-10 h-28 w-28 rounded-full bg-gradient-to-br from-rose-400/35 to-fuchsia-400/20 blur-2xl"></div>
+    <div class="choice-orb choice-orb--delay absolute right-0 top-20 -z-10 h-36 w-36 rounded-full bg-gradient-to-br from-cyan-400/40 to-blue-500/20 blur-3xl sm:right-8"></div>
+
+    <div class="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        <div class="mx-auto max-w-2xl text-center">
+            <span class="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white/80 px-4 py-1.5 text-xs font-bold tracking-wide text-cyan-700 backdrop-blur sm:text-sm">
+                <i class="fa-solid fa-user-plus"></i>
+                NEW ACCOUNT SETUP
+            </span>
+            <h1 class="mt-5 font-display text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">Create Your <span class="bg-gradient-to-r from-cyan-600 via-blue-600 to-rose-500 bg-clip-text text-transparent">Learning Account</span></h1>
+            <p class="mt-4 text-base leading-7 text-slate-600 sm:text-lg">Student অথবা Teacher role অনুযায়ী account খুলে personal learning অথবা teaching journey শুরু করুন।</p>
+        </div>
+
+        <div class="mt-10 grid gap-5 md:grid-cols-2">
+            <a href="{% url 'content:student_signup' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}" class="choice-card group rounded-3xl border border-white/70 bg-white/80 p-6 shadow-lg shadow-slate-900/5 backdrop-blur transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/15 to-cyan-500/20 text-xl text-blue-700 ring-1 ring-blue-200">
+                    <i class="fa-solid fa-user-graduate"></i>
+                </div>
+                <h2 class="mt-4 text-2xl font-extrabold text-slate-900">Student Signup</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-600">Structured lessons, progress view, এবং interactive course access-এর জন্য student profile তৈরি করুন।</p>
+                <div class="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
+                    <span class="rounded-full bg-blue-100 px-3 py-1 text-blue-700"><i class="fa-solid fa-lightbulb"></i> Smart Study</span>
+                    <span class="rounded-full bg-sky-100 px-3 py-1 text-sky-700"><i class="fa-solid fa-mobile-screen"></i> Mobile Ready</span>
+                </div>
+                <span class="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2.5 font-semibold text-white transition group-hover:from-blue-700 group-hover:to-cyan-700">Create Student Account <i class="fa-solid fa-arrow-right"></i></span>
+            </a>
+
+            <a href="{% url 'content:teacher_signup' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}" class="choice-card group rounded-3xl border border-white/70 bg-white/80 p-6 shadow-lg shadow-slate-900/5 backdrop-blur transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/15 to-teal-500/20 text-xl text-emerald-700 ring-1 ring-emerald-200">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                </div>
+                <h2 class="mt-4 text-2xl font-extrabold text-slate-900">Teacher Signup</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-600">Lesson publish, curriculum update, এবং course কাঠামো manage করার জন্য teacher profile তৈরি করুন।</p>
+                <div class="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
+                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700"><i class="fa-solid fa-laptop-file"></i> Content Control</span>
+                    <span class="rounded-full bg-teal-100 px-3 py-1 text-teal-700"><i class="fa-solid fa-bars-progress"></i> Organized Flow</span>
+                </div>
+                <span class="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 font-semibold text-white transition group-hover:from-emerald-700 group-hover:to-teal-700">Create Teacher Account <i class="fa-solid fa-arrow-right"></i></span>
+            </a>
+        </div>
+
+        <p class="mt-7 text-center text-sm text-slate-600">Already have an account? <a href="{% url 'content:login' %}" class="font-semibold text-cyan-700 transition hover:text-cyan-900">Login instead</a></p>
+    </div>
+</section>
+{% endblock %}
