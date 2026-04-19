@@ -30,6 +30,21 @@ class UserProfile(models.Model):
         return f"{self.user.username} ({self.role})"
 
 
+class EmailOTP(models.Model):
+    """One-time code for email verification after signup."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_otps')
+    code = models.CharField(max_length=8)
+    is_used = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"OTP for {self.user.email} — {self.code}"
+
+
 class StudentDeviceSession(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='student_device_sessions')
     jti = models.CharField(max_length=64, unique=True)
@@ -197,6 +212,7 @@ class InteractiveContent(models.Model):
 class ModulePurchase(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='module_purchases')
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='purchases')
+    is_purchased = models.BooleanField(default=False)
     purchased_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

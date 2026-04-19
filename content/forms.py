@@ -239,6 +239,10 @@ class ProfileUpdateForm(forms.Form):
                 self.add_error('teacher_experience_years', 'This field is required for teachers.')
         return cleaned
 
+
+class OTPForm(forms.Form):
+    code = forms.CharField(max_length=8, required=True, widget=forms.TextInput(attrs={'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5'}))
+
     def save(self):
         user = self.user
         profile = self.profile

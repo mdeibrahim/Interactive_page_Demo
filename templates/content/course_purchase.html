@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.name }} — Purchase{% endblock %}
+
+{% block content %}
+<section class="py-12">
+  <div class="mx-auto max-w-5xl px-4 sm:px-6">
+    <div class="grid gap-8 lg:grid-cols-2">
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h1 class="text-2xl font-bold text-slate-900">{{ course.name }}</h1>
+        <p class="mt-2 text-sm text-slate-600">{{ course.description|default:'No description provided.' }}</p>
+
+        <dl class="mt-6 grid grid-cols-2 gap-3 text-sm text-slate-600">
+          <div>
+            <dt class="font-semibold text-slate-800">Category</dt>
+            <dd class="mt-1">{{ category.name }}</dd>
+          </div>
+          <div>
+            <dt class="font-semibold text-slate-800">Price</dt>
+            <dd class="mt-1 text-lg font-bold text-slate-900">৳{{ course.price }}</dd>
+          </div>
+        </dl>
+
+        <div class="mt-6">
+          <h3 class="text-sm font-semibold text-slate-800">Course plan</h3>
+          <div class="mt-2 text-sm text-slate-600">{{ course.long_description|default:course.description|default:'Course plan will be added by the teacher.' }}</div>
+        </div>
+
+        <div class="mt-6">
+          <a href="{% url 'content:teacher_course_detail' course.id %}" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 hover:underline">
+            <i class="fa-solid fa-pen-to-square"></i> View instructor & syllabus
+          </a>
+        </div>
+      </div>
+
+      <aside class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-bold text-slate-900">Ready to buy</h2>
+        <p class="mt-1 text-sm text-slate-600">Select payment method and proceed. This page simulates a modern checkout flow.</p>
+
+        <div class="mt-4">
+          <form method="post" action="{% url 'content:buy_module' category.slug course.slug %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
+
+            <div class="grid gap-3">
+              <button type="button" data-method="bkash" class="payment-method flex items-center gap-3 rounded-lg border p-3 text-sm hover:bg-slate-50">
+                <img src="/static/images/payments/bkash.svg" alt="bKash" class="h-6 w-6"> <span>বিকাশ (bKash)</span>
+              </button>
+
+              <button type="button" data-method="nagad" class="payment-method flex items-center gap-3 rounded-lg border p-3 text-sm hover:bg-slate-50">
+                <img src="/static/images/payments/nagad.svg" alt="Nagad" class="h-6 w-6"> <span>Nagad</span>
+              </button>
+
+              <button type="button" data-method="rocket" class="payment-method flex items-center gap-3 rounded-lg border p-3 text-sm hover:bg-slate-50">
+                <img src="/static/images/payments/rocket.svg" alt="Rocket" class="h-6 w-6"> <span>Rocket</span>
+              </button>
+
+              <button type="button" data-method="bank" class="payment-method flex items-center gap-3 rounded-lg border p-3 text-sm hover:bg-slate-50">
+                <img src="/static/images/payments/bank.svg" alt="Bank" class="h-6 w-6"> <span>Bank Transfer</span>
+              </button>
+
+            </div>
+
+            <input type="hidden" name="payment_method" id="payment_method" value="">
+
+            <div id="payment_instructions" class="mt-4 text-sm text-slate-600"></div>
+
+            <div class="mt-6">
+              <button id="payBtn" type="submit" class="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-white font-semibold">Pay ৳{{ course.price }}</button>
+            </div>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+{% block extra_js %}
+<script>
+  (function(){
+    const methods = document.querySelectorAll('.payment-method');
+    const input = document.getElementById('payment_method');
+    const instr = document.getElementById('payment_instructions');
+    let selected = null;
+    methods.forEach(btn => {
+      btn.addEventListener('click', function(){
+        methods.forEach(b=>b.classList.remove('ring-2','ring-emerald-300'));
+        btn.classList.add('ring-2','ring-emerald-300');
+        selected = btn.getAttribute('data-method');
+        input.value = selected;
+        switch(selected){
+          case 'bkash': instr.innerHTML = '<strong>বিকাশ</strong> পেমেন্ট: *247# → Send Money → 01911334810 (example)'; break;
+          case 'nagad': instr.innerHTML = '<strong>Nagad</strong> পেমেন্ট নির্দেশ: Agent বা USSD ব্যবহার করুন'; break;
+          case 'rocket': instr.innerHTML = '<strong>Rocket</strong> পেমেন্ট নির্দেশ: Agent/Bank app ব্যবহার করুন'; break;
+          case 'bank': instr.innerHTML = '<strong>Bank Transfer</strong> Use account details shown on confirmation.'; break;
+          default: instr.innerHTML = '';
+        }
+      });
+    });
+  })();
+</script>
+{% endblock %}

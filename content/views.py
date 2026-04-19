@@ -5,6 +5,9 @@ from django.http import JsonResponse
 from django.db.models import Avg, Count, OuterRef, Q, Subquery
 from django.contrib import messages
 from django.contrib.auth import login
+from django.conf import settings
+from .utils import send_verification_email
+from django.core.cache import cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate
@@ -267,6 +270,32 @@ def submit_new_course_request(request):
 
 
 @login_required
+def add_course_request(request):
+    """Show a full-page form for teachers to request a new course."""
+    if not _is_teacher(request.user):
+        messages.error(request, 'Only teachers can submit requests.')
+        return redirect('content:student_dashboard')
+
+    form = NewCourseAddRequestForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        CourseChangeRequest.objects.create(
+            teacher=request.user,
+            request_type='add',
+            course=None,
+            requested_category=form.cleaned_data['requested_category'],
+            requested_course_name=form.cleaned_data['requested_course_name'].strip(),
+            requested_price=form.cleaned_data['requested_price'],
+            summary=f"New course request: {form.cleaned_data['requested_course_name'].strip()}",
+            details=(form.cleaned_data.get('details') or '').strip(),
+            status=ApprovalStatus.PENDING,
+        )
+        messages.success(request, 'New course add request submitted for admin approval.')
+        return redirect('content:teacher_dashboard')
+
+    return render(request, 'content/add_course_request.html', {'form': form})
+
+
+@login_required
 def student_dashboard(request):
     if _is_teacher(request.user):
         return redirect('content:teacher_dashboard')
@@ -379,7 +408,11 @@ def buy_module(request, cat_slug, subcat_slug):
     category = get_object_or_404(Category, slug=cat_slug)
     subcategory = get_object_or_404(SubCategory, category=category, slug=subcat_slug)
 
-    ModulePurchase.objects.get_or_create(user=request.user, subcategory=subcategory)
+    purchase, created = ModulePurchase.objects.get_or_create(user=request.user, subcategory=subcategory)
+    # mark as purchased when user goes through the buy flow
+    if not purchase.is_purchased:
+        purchase.is_purchased = True
+        purchase.save()
 
     if subcategory.is_free:
         messages.success(request, f'"{subcategory.name}" is now added to your account (free course).')
@@ -390,6 +423,52 @@ def buy_module(request, cat_slug, subcat_slug):
     if next_url:
         return redirect(next_url)
     return redirect('content:category_details', cat_slug=category.slug, subcat_slug=subcategory.slug)
+
+
+@login_required
+def start_purchase(request, cat_slug, subcat_slug):
+    """Initialize purchase when user clicks 'এখনই কিনুন'.
+
+    - If course is free (is_free or price == 0): create ModulePurchase and mark is_purchased=True then redirect to course details.
+    - If course is paid (>0): create ModulePurchase relation (is_purchased=False) if not exists, then redirect to `course_purchase` page.
+    """
+    category = get_object_or_404(Category, slug=cat_slug)
+    subcategory = get_object_or_404(SubCategory, category=category, slug=subcat_slug)
+
+    purchase, created = ModulePurchase.objects.get_or_create(user=request.user, subcategory=subcategory)
+
+    # Free course: immediately mark as purchased
+    is_free = getattr(subcategory, 'is_free', False) or (getattr(subcategory, 'price', 0) == 0)
+    if is_free:
+        if not purchase.is_purchased:
+            purchase.is_purchased = True
+            purchase.save()
+        messages.success(request, f'"{subcategory.name}" is now added to your account (free course).')
+        return redirect('content:category_details', cat_slug=category.slug, subcat_slug=subcategory.slug)
+
+    # Paid course: ensure relation exists but keep is_purchased False, then show purchase page
+    if purchase.is_purchased:
+        messages.info(request, f'You already have access to "{subcategory.name}".')
+        return redirect('content:category_details', cat_slug=category.slug, subcat_slug=subcategory.slug)
+
+    if created:
+        purchase.is_purchased = False
+        purchase.save()
+
+    return redirect('content:course_purchase', cat_slug=category.slug, subcat_slug=subcategory.slug)
+
+
+@login_required
+def course_purchase(request, cat_slug, subcat_slug):
+    """Modern purchase / course detail page showing price and payment options."""
+    category = get_object_or_404(Category, slug=cat_slug)
+    subcategory = get_object_or_404(SubCategory, category=category, slug=subcat_slug)
+
+    # Render a friendly purchase page. The actual purchase action posts to `buy_module`.
+    return render(request, 'content/course_purchase.html', {
+        'category': category,
+        'course': subcategory,
+    })
 
 
 def subject_editor(request, subject_id):
@@ -782,13 +861,129 @@ def _role_signup(request, role, template_name):
         user = form.save()
         form.save_profile(user=user, role=role)
 
-        login(request, user)
-        messages.success(request, 'Welcome! Your account has been created successfully.')
-        next_url = request.POST.get('next') or request.GET.get('next')
-        if next_url:
-            return redirect(next_url)
-        if role == UserRole.TEACHER:
-            return redirect('content:teacher_dashboard')
-        return redirect('content:student_dashboard')
+        # Create OTP and redirect to verification
+        from django.utils import timezone
+        from datetime import timedelta
+        from .models import EmailOTP
+        import random
+
+        code = f"{random.randint(100000, 999999)}"
+        expires = timezone.now() + timedelta(minutes=15)
+        EmailOTP.objects.create(user=user, code=code, expires_at=expires)
+
+        # Send verification email (falls back to showing OTP in messages if send fails)
+        sent = send_verification_email(user, code)
+        if not sent:
+            # fallback: surface OTP in messages for debugging or if email send fails
+            messages.info(request, f'OTP for verification: {code}')
+
+        request.session['pending_otp_user'] = user.id
+        return redirect('content:otp_verify')
 
     return render(request, template_name, {'form': form})
+
+
+def otp_verify(request):
+    from .forms import OTPForm
+    from .models import EmailOTP
+    from django.utils import timezone
+
+    user_id = request.session.get('pending_otp_user')
+    if not user_id:
+        messages.error(request, 'No pending verification found. Please sign up first.')
+        return redirect('content:signup')
+
+    user = get_object_or_404(User, id=user_id)
+
+    # Check lockout
+    lock_key = f"otp:lockout:{user.id}"
+    if cache.get(lock_key):
+        messages.error(request, 'Too many failed attempts. Please try again later.')
+        return redirect('content:signup')
+    form = OTPForm(request.POST or None)
+
+    if request.method == 'POST' and form.is_valid():
+        code = form.cleaned_data['code'].strip()
+        otp_qs = EmailOTP.objects.filter(user=user, code=code, is_used=False, expires_at__gte=timezone.now())
+        if otp_qs.exists():
+            otp = otp_qs.first()
+            otp.is_used = True
+            otp.save()
+            # login user and cleanup
+            # reset attempt counter
+            attempt_key = f"otp:attempt:{user.id}"
+            try:
+                cache.delete(attempt_key)
+            except Exception:
+                pass
+            login(request, user)
+            request.session.pop('pending_otp_user', None)
+            messages.success(request, 'Your account is verified and you are now logged in.')
+            profile = UserProfile.objects.get_or_create(user=user)[0]
+            if profile.role == UserRole.TEACHER:
+                return redirect('content:teacher_dashboard')
+            return redirect('content:student_dashboard')
+        else:
+            # increment attempt counter
+            attempt_key = f"otp:attempt:{user.id}"
+            try:
+                if cache.get(attempt_key) is None:
+                    cache.add(attempt_key, 1, timeout=settings.OTP_ATTEMPT_WINDOW)
+                else:
+                    cache.incr(attempt_key)
+            except Exception:
+                pass
+
+            # lockout if exceeded
+            attempts = cache.get(attempt_key) or 0
+            if attempts >= settings.OTP_ATTEMPT_LIMIT:
+                lock_key = f"otp:lockout:{user.id}"
+                try:
+                    cache.set(lock_key, True, timeout=settings.OTP_LOCKOUT_SECONDS)
+                except Exception:
+                    pass
+                messages.error(request, 'Too many failed attempts. Please try again later.')
+                return redirect('content:signup')
+
+            form.add_error('code', 'Invalid or expired code.')
+
+    return render(request, 'registration/otp_verify.html', {'form': form, 'email': user.email})
+
+
+def otp_resend(request):
+    from django.utils import timezone
+    from datetime import timedelta
+    import random
+    from .models import EmailOTP
+
+    user_id = request.session.get('pending_otp_user')
+    if not user_id:
+        messages.error(request, 'No pending verification found.')
+        return redirect('content:signup')
+
+    user = get_object_or_404(User, id=user_id)
+    code = f"{random.randint(100000, 999999)}"
+    expires = timezone.now() + timedelta(minutes=15)
+    # rate-limit resends per user
+    resend_key = f"otp:resend:{user.id}"
+    try:
+        cnt = cache.get(resend_key) or 0
+        if cnt >= settings.OTP_RESEND_LIMIT:
+            messages.error(request, 'Too many resend requests. Please try again later.')
+            return redirect('content:otp_verify')
+
+        if cache.get(resend_key) is None:
+            cache.add(resend_key, 1, timeout=settings.OTP_RESEND_WINDOW)
+        else:
+            cache.incr(resend_key)
+    except Exception:
+        # if cache fails, continue without rate-limiting
+        pass
+
+    EmailOTP.objects.create(user=user, code=code, expires_at=expires)
+    sent = send_verification_email(user, code)
+    if sent:
+        messages.success(request, 'A verification code has been sent to your email.')
+    else:
+        messages.info(request, f'OTP for verification: {code}')
+    return redirect('content:otp_verify')

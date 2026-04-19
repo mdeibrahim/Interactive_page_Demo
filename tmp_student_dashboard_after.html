@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Interactive Teaching Platform{% endblock %}</title>
-    <meta name="description" content="{% block meta_description %}An interactive multimedia teaching platform with rich content exploration.{% endblock %}">
+    <title>Student Dashboard — Teaching Platform</title>
+    <meta name="description" content="An interactive multimedia teaching platform with rich content exploration.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    {% load static %}
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -133,19 +133,19 @@
             z-index: 90;
         }
     </style>
-    {% block extra_css %}{% endblock %}
+    
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased">
     <!-- Header / Navbar -->
-    {% url 'content:home' as home_url %}
-    {% url 'content:my_courses' as my_modules_url %}
-    {% url 'content:login' as login_url %}
-    {% url 'content:signup' as signup_url %}
-    {% url 'content:profile' as profile_url %}
+    
+    
+    
+    
+    
     <header id="mainHeader" class="nav-shell sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
         <div class="relative mx-auto w-full max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between gap-3">
-                <a href="{% url 'content:home' %}" class="inline-flex items-center gap-2.5 rounded-xl px-1 py-1 text-lg font-bold tracking-tight text-slate-900 transition hover:scale-[1.01]">
+                <a href="/" class="inline-flex items-center gap-2.5 rounded-xl px-1 py-1 text-lg font-bold tracking-tight text-slate-900 transition hover:scale-[1.01]">
                     <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 via-orange-500 to-cyan-600 text-white shadow-lg shadow-rose-500/25">
                         <i class="fa-solid fa-graduation-cap text-sm"></i>
                     </span>
@@ -157,121 +157,156 @@
                 </button>
 
                 <nav class="hidden items-center gap-1 text-sm md:flex lg:text-[15px]">
-                    <a href="{{ home_url }}" class="nav-link {% if request.path == home_url %}nav-link-active{% endif %}">
+                    <a href="/" class="nav-link ">
                         <i class="fa-solid fa-house"></i> Home
                     </a>
-                    {% if user.is_authenticated %}
-                    <a href="{% url 'content:student_dashboard' %}" class="nav-link {% if '/dashboard/' in request.path %}nav-link-active{% endif %}">
+                    
+                    <a href="/dashboard/student/" class="nav-link nav-link-active">
                         <i class="fa-solid fa-gauge-high"></i> Dashboard
                     </a>
-                    <a href="{{ my_modules_url }}" class="nav-link {% if request.path == my_modules_url %}nav-link-active{% endif %}">
+                    <a href="/my-courses/" class="nav-link ">
                         <i class="fa-solid fa-book"></i> My Courses
                     </a>
-                    {% with profile=user.profile %}
-                    {% with role_label=profile.role|default:'student' %}
-                    {% with display_name=profile.full_name|default:user.username %}
+                    
+                    
+                    
                     <div class="relative ml-2">
                         <button id="profileMenuBtn" type="button" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 p-1 pr-2.5 transition hover:border-slate-300 hover:bg-white" aria-expanded="false" aria-controls="profileMenuPanel">
-                            <span class="profile-avatar">{{ display_name|slice:":1"|upper }}</span>
-                            <span class="hidden text-xs font-semibold text-slate-700 lg:inline">{{ user.username }}</span>
+                            <span class="profile-avatar">_</span>
+                            <span class="hidden text-xs font-semibold text-slate-700 lg:inline">__testuser__</span>
                             <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
                         </button>
                         <div id="profileMenuPanel" class="profile-menu absolute right-0 top-full z-50 mt-2 hidden p-3">
                             <div class="rounded-xl bg-slate-50 px-3 py-2.5">
-                                <p class="text-sm font-bold text-slate-900">{{ display_name }}</p>
-                                <p class="text-xs text-slate-600">{{ user.email|default:"No email" }}</p>
-                                <p class="mt-1 inline-flex rounded-full bg-cyan-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-cyan-700">{{ role_label|title }}</p>
+                                <p class="text-sm font-bold text-slate-900">__testuser__</p>
+                                <p class="text-xs text-slate-600">test@example.com</p>
+                                <p class="mt-1 inline-flex rounded-full bg-cyan-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-cyan-700">Student</p>
                             </div>
-                            <a href="{{ profile_url }}" class="mt-3 inline-flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                            <a href="/profile/" class="mt-3 inline-flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
                                 <i class="fa-solid fa-user"></i> Profile
                             </a>
-                            <form method="post" action="{% url 'content:logout' %}" class="mt-2">
-                                {% csrf_token %}
+                            <form method="post" action="/accounts/logout/" class="mt-2">
+                                <input type="hidden" name="csrfmiddlewaretoken" value="qB1TaRZvuiU5z1Fp5J19lsvYXU4kvZ6llsdB403c1M0E5lJPJKCc5I6FhauuvnZl">
                                 <button type="submit" class="inline-flex w-full items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">
                                     <i class="fa-solid fa-right-from-bracket"></i> Logout
                                 </button>
                             </form>
                         </div>
                     </div>
-                    {% endwith %}
-                    {% endwith %}
-                    {% endwith %}
-                    {% else %}
-                    <a href="{{ login_url }}" class="nav-link {% if '/accounts/login' in request.path %}nav-link-active{% endif %}">
-                        <i class="fa-solid fa-right-to-bracket"></i> Login
-                    </a>
-                    <a href="{{ signup_url }}" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-3.5 py-2 font-semibold text-white shadow-lg shadow-rose-500/25 transition hover:from-rose-600 hover:to-orange-600">
-                        <i class="fa-solid fa-user-plus"></i> Signup
-                    </a>
-                    {% endif %}
+                    
+                    
+                    
+                    
                 </nav>
             </div>
 
             <div id="mobileMenu" class="mt-3 hidden rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl shadow-slate-900/5 md:hidden">
                 <div class="space-y-1">
-                    <a href="{{ home_url }}" class="nav-link w-full {% if request.path == home_url %}nav-link-active{% endif %}">
+                    <a href="/" class="nav-link w-full ">
                         <i class="fa-solid fa-house"></i> Home
                     </a>
-                    {% if user.is_authenticated %}
-                    <a href="{% url 'content:student_dashboard' %}" class="nav-link w-full {% if '/dashboard/' in request.path %}nav-link-active{% endif %}">
+                    
+                    <a href="/dashboard/student/" class="nav-link w-full nav-link-active">
                         <i class="fa-solid fa-gauge-high"></i> Dashboard
                     </a>
-                    <a href="{{ my_modules_url }}" class="nav-link w-full {% if request.path == my_modules_url %}nav-link-active{% endif %}">
+                    <a href="/my-courses/" class="nav-link w-full ">
                         <i class="fa-solid fa-book"></i> My Courses
                     </a>
-                    {% with profile=user.profile %}
-                    {% with role_label=profile.role|default:'student' %}
-                    {% with display_name=profile.full_name|default:user.username %}
+                    
+                    
+                    
                     <div class="rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-700">
-                        <p class="font-semibold"><i class="fa-solid fa-user"></i> {{ display_name }}</p>
-                        <p class="text-[11px] text-slate-600">{{ user.email|default:"No email" }}</p>
-                        <span class="mt-1 inline-flex rounded-full bg-white px-2 py-0.5 text-[11px] font-bold uppercase text-slate-700">{{ role_label|title }}</span>
+                        <p class="font-semibold"><i class="fa-solid fa-user"></i> __testuser__</p>
+                        <p class="text-[11px] text-slate-600">test@example.com</p>
+                        <span class="mt-1 inline-flex rounded-full bg-white px-2 py-0.5 text-[11px] font-bold uppercase text-slate-700">Student</span>
                     </div>
-                    {% endwith %}
-                    {% endwith %}
-                    {% endwith %}
-                    <a href="{{ profile_url }}" class="nav-link w-full">
+                    
+                    
+                    
+                    <a href="/profile/" class="nav-link w-full">
                         <i class="fa-solid fa-user"></i> Profile
                     </a>
-                    <form method="post" action="{% url 'content:logout' %}">
-                        {% csrf_token %}
+                    <form method="post" action="/accounts/logout/">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="qB1TaRZvuiU5z1Fp5J19lsvYXU4kvZ6llsdB403c1M0E5lJPJKCc5I6FhauuvnZl">
                         <button type="submit" class="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 font-semibold text-slate-700 transition hover:bg-slate-100">
                             <i class="fa-solid fa-right-from-bracket"></i> Logout
                         </button>
                     </form>
-                    {% else %}
-                    <a href="{{ login_url }}" class="nav-link w-full {% if '/accounts/login' in request.path %}nav-link-active{% endif %}">
-                        <i class="fa-solid fa-right-to-bracket"></i> Login
-                    </a>
-                    <a href="{{ signup_url }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 px-3.5 py-2 font-semibold text-white shadow-lg shadow-rose-500/25 transition hover:from-rose-600 hover:to-orange-600">
-                        <i class="fa-solid fa-user-plus"></i> Signup
-                    </a>
-                    {% endif %}
+                    
                 </div>
             </div>
         </div>
     </header>
 
-    {% if messages %}
-    <div class="mt-2 mb-2 pl-5 pr-5 space-y-2">
-        {% for message in messages %}
-            {% if 'error' in message.tags %}
-                <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ message }}</div>
-            {% elif 'success' in message.tags %}
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ message }}</div>
-            {% else %}
-                <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">{{ message }}</div>
-            {% endif %}
-        {% endfor %}
-    </div>
-    {% endif %}
+    
 
     <!-- Breadcrumb -->
-    {% block breadcrumb %}{% endblock %}
+    
 
     <!-- Main Content -->
     <main>
-        {% block content %}{% endblock %}
+        
+<section class="py-10 sm:py-12">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="rounded-3xl border border-white/70 bg-[linear-gradient(135deg,#f0f9ff_0%,#eef2ff_45%,#fff7ed_100%)] p-6 shadow-lg sm:p-8">
+            <h1 class="font-display text-3xl font-bold text-slate-900 sm:text-4xl">Student Learning Dashboard</h1>
+            <p class="mt-2 text-slate-700">আপনার কেনা course, progress tracking, certificate claim এবং নতুন course explore এক জায়গায়।</p>
+        </div>
+
+        <div class="mt-8">
+            <h2 class="text-2xl font-bold text-slate-900">My Purchased Courses</h2>
+            
+            <div class="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                
+                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Journalism</p>
+                    <h3 class="mt-1 text-xl font-bold text-slate-900">Crime Reporting</h3>
+                    <p class="mt-2 text-sm text-slate-600">Purchased: Apr 19, 2026</p>
+
+                    <div class="mt-4">
+                        <div class="mb-1 flex items-center justify-between text-xs font-semibold text-slate-600">
+                            <span>Course Progress</span>
+                            <span>0.0%</span>
+                        </div>
+                        <div class="h-2 rounded-full bg-slate-200">
+                            <div class="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600" style="width: 0.0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        
+                        <a href="/category/journalism/details/crime-reporting/" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                            <i class="fa-solid fa-book-open"></i> শুরু করুন
+                        </a>
+                        
+                        
+                    </div>
+
+                    
+                </article>
+                
+            </div>
+            
+        </div>
+
+        <div class="mt-10">
+            <h2 class="text-2xl font-bold text-slate-900">Available Courses</h2>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                
+                <p class="text-sm text-slate-600">No additional courses available right now.</p>
+                
+            </div>
+        </div>
+
+        <div class="mt-10 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="text-2xl font-bold text-slate-900">My Certificates</h2>
+            
+            <p class="mt-3 text-sm text-slate-600">No certificates yet. Complete a course to unlock one.</p>
+            
+        </div>
+    </div>
+</section>
+
     </main>
 
     <!-- Modal Overlay -->
@@ -299,7 +334,7 @@
         </div>
     </footer>
 
-    <script src="{% static 'js/main.js' %}"></script>
+    <script src="/static/js/main.js"></script>
     <script>
         (function () {
             const header = document.getElementById('mainHeader');
@@ -352,6 +387,6 @@
             }
         })();
     </script>
-    {% block extra_js %}{% endblock %}
+    
 </body>
 </html>

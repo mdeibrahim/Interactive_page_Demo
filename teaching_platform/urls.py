@@ -9,7 +9,7 @@ urlpatterns = [
     path('admin/', admin.site.admin_view(admin_root_redirect), name='admin_root'),
     path('admin/dashboard/', admin.site.admin_view(admin_dashboard), name='admin_dashboard'),
     path('admin/', admin.site.urls),
-    path('', include('content.urls')),
+    path('', include(('content.urls', 'content'), namespace='content')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # In production, static() does not serve media when DEBUG=False.

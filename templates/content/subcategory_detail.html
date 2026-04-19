@@ -172,7 +172,7 @@
 
                             {% if has_access %}
                             <a href="#" onclick="event.preventDefault(); document.querySelector('#course-list-jump').scrollIntoView({behavior:'smooth'});" class="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-yellow-400 px-4 py-2.5 font-bold text-slate-900 transition hover:bg-yellow-300">
-                                এখনই শিখুন
+                                এখনই কিনুন
                             </a>
                             {% elif user.is_authenticated %}
                             <form method="post" action="{% url 'content:buy_module' category.slug subcategory.slug %}">
