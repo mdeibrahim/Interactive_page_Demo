@@ -30,12 +30,13 @@
         // Show loading state
         modalTitle.textContent = 'Loading…';
         modalBody.innerHTML = `
-            <div class="modal-loading">
-                <div class="spinner"></div>
+            <div class="flex flex-col items-center justify-center gap-3 py-12 text-slate-600">
+                <div class="h-9 w-9 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
                 <p>Loading content…</p>
             </div>`;
 
-        modal.classList.add('modal--active');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
         document.body.style.overflow = 'hidden';
         modalClose.focus();
 
@@ -64,14 +65,14 @@
 
         switch (data.content_type) {
             case 'text':
-                html = `<div class="modal-text-content">${data.text_content || '<em>No text content.</em>'}</div>`;
+                html = `<div class="prose prose-slate max-w-none">${data.text_content || '<em>No text content.</em>'}</div>`;
                 break;
 
             case 'image':
                 if (data.image_url) {
                     html = `
-                        <div class="modal-image-wrap">
-                            <img src="${data.image_url}" alt="${escHtml(data.title)}" class="modal-image" loading="lazy">
+                        <div class="rounded-xl bg-slate-50 p-3">
+                            <img src="${data.image_url}" alt="${escHtml(data.title)}" class="mx-auto max-h-[65vh] rounded-lg" loading="lazy">
                         </div>`;
                 } else {
                     html = noContentHtml('image');
@@ -81,11 +82,11 @@
             case 'audio':
                 if (data.audio_url) {
                     html = `
-                        <div class="modal-audio-wrap">
-                            <p style="margin-bottom:16px;color:var(--text-secondary);">
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <p class="mb-4 text-slate-600">
                                 <i class="fa-solid fa-headphones"></i> Click play to listen:
                             </p>
-                            <audio controls class="modal-audio" autoplay>
+                            <audio controls class="w-full" autoplay>
                                 <source src="${data.audio_url}">
                                 Your browser does not support audio.
                             </audio>
@@ -98,8 +99,8 @@
             case 'video':
                 if (data.video_url) {
                     html = `
-                        <div class="modal-video-wrap">
-                            <video controls class="modal-video" autoplay muted>
+                        <div class="overflow-hidden rounded-xl border border-slate-200 bg-black">
+                            <video controls class="max-h-[65vh] w-full" autoplay muted>
                                 <source src="${data.video_url}">
                                 Your browser does not support video.
                             </video>
@@ -119,10 +120,11 @@
                     youtubeUrl.searchParams.set('widget_referrer', window.location.href);
 
                     html = `
-                        <div class="modal-youtube-wrap">
+                        <div class="aspect-video overflow-hidden rounded-xl border border-slate-200">
                             <iframe
                                 src="${youtubeUrl.toString()}"
                                 title="${escHtml(data.title)}"
+                                class="h-full w-full"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                 referrerpolicy="strict-origin-when-cross-origin"
                                 allowfullscreen>
@@ -142,7 +144,7 @@
 
     function noContentHtml(type) {
         return `
-            <div class="modal-error">
+            <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700">
                 <i class="fa-solid fa-circle-exclamation"></i>
                 <p>No ${type} content has been uploaded yet.</p>
             </div>`;
@@ -156,7 +158,8 @@
 
     // ── Close Modal ──
     function closeModal() {
-        modal.classList.remove('modal--active');
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
         document.body.style.overflow = '';
 
         // Stop any playing media
@@ -168,7 +171,7 @@
             }
         });
 
-        modalBody.innerHTML = `<div class="modal-loading"><div class="spinner"></div><p>Loading content…</p></div>`;
+        modalBody.innerHTML = `<div class="flex flex-col items-center justify-center gap-3 py-12 text-slate-600"><div class="h-9 w-9 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div><p>Loading content…</p></div>`;
         modalTitle.textContent = '';
     }
 
@@ -179,7 +182,7 @@
     });
 
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && modal.classList.contains('modal--active')) closeModal();
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
     });
 
     // ── Attach click events to interactive elements ──

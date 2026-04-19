@@ -9,22 +9,26 @@
 {% endblock %}
 
 {% block breadcrumb %}
-<nav class="breadcrumb-bar">
-    <div class="container">
-        <ol class="breadcrumb">
-            <li><a href="{% url 'content:home' %}"><i class="fa-solid fa-house"></i></a></li>
-            <li><a href="{% url 'content:category_detail' category.slug %}">{{ category.name }}</a></li>
-            <li><a href="{% url 'content:subcategory_detail' category.slug subcategory.slug %}">{{ subcategory.name }}</a></li>
-            <li><a href="{% url 'content:subject_detail' category.slug subcategory.slug subject.slug %}">{{ subject.title }}</a></li>
-            <li class="active"><i class="fa-solid fa-pen-to-square"></i> Editor</li>
+<nav class="border-y border-slate-200 bg-slate-100/80">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <ol class="flex items-center gap-3 py-3 text-sm text-slate-600">
+            <li><a href="{% url 'content:home' %}" class="hover:text-slate-900"><i class="fa-solid fa-house"></i></a></li>
+            <li>/</li>
+            <li><a href="{% url 'content:category_detail' category.slug %}" class="hover:text-slate-900">{{ category.name }}</a></li>
+            <li>/</li>
+            <li><a href="{% url 'content:category_details' category.slug subcategory.slug %}" class="hover:text-slate-900">Details</a></li>
+            <li>/</li>
+            <li><a href="{% url 'content:subject_detail' category.slug subcategory.slug subject.slug %}" class="hover:text-slate-900">{{ subject.title }}</a></li>
+            <li>/</li>
+            <li class="font-semibold text-slate-800"><i class="fa-solid fa-pen-to-square"></i> Editor</li>
         </ol>
     </div>
 </nav>
 {% endblock %}
 
 {% block content %}
-<div class="editor-shell container" style="margin-top: 40px; margin-bottom: 80px;">
-    <div class="editor-topbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+<div class="editor-shell mx-auto w-full max-w-7xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
+    <div class="editor-topbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
         <div class="editor-topbar-left" style="display: flex; align-items: center; gap: 15px;">
             <div class="editor-status" id="editorStatus" style="color: #16a34a; font-size: 0.9rem; font-weight: 500;">
                 <i class="fa-solid fa-circle-check"></i> Saved

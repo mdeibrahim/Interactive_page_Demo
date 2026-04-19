@@ -1,4 +1,49 @@
 from django.db import models
+from django.contrib.auth import get_user_model
+
+
+User = get_user_model()
+
+
+class UserRole(models.TextChoices):
+    TEACHER = 'teacher', 'Teacher'
+    STUDENT = 'student', 'Student'
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    role = models.CharField(max_length=20, choices=UserRole.choices, default=UserRole.STUDENT)
+    full_name = models.CharField(max_length=160, blank=True, default='')
+    phone_number = models.CharField(max_length=20, blank=True, default='')
+    student_institution = models.CharField(max_length=180, blank=True, default='')
+    student_level = models.CharField(max_length=80, blank=True, default='')
+    teacher_institution = models.CharField(max_length=180, blank=True, default='')
+    teacher_subject = models.CharField(max_length=120, blank=True, default='')
+    teacher_experience_years = models.PositiveSmallIntegerField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['user__username']
+
+    def __str__(self):
+        return f"{self.user.username} ({self.role})"
+
+
+class StudentDeviceSession(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='student_device_sessions')
+    jti = models.CharField(max_length=64, unique=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} device session ({self.jti})"
 
 
 class Category(models.Model):
@@ -17,9 +62,11 @@ class Category(models.Model):
 
 class SubCategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
+    teacher = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='teaching_courses', blank=True, null=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField()
     description = models.TextField(blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -29,6 +76,10 @@ class SubCategory(models.Model):
 
     def __str__(self):
         return f"{self.category.name} → {self.name}"
+
+    @property
+    def is_free(self):
+        return self.price <= 0
 
 
 class Subject(models.Model):
@@ -141,3 +192,131 @@ class InteractiveContent(models.Model):
             return f"https://www.youtube.com/embed/{video_id}"
 
         return ''
+
+
+class ModulePurchase(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='module_purchases')
+    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='purchases')
+    purchased_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'subcategory')
+        ordering = ['-purchased_at']
+
+    def __str__(self):
+        return f"{self.user} purchased {self.subcategory.name}"
+
+
+class CourseVideo(models.Model):
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='course_videos')
+    title = models.CharField(max_length=255)
+    video_url = models.URLField()
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        return f"{self.subject.title} - {self.title}"
+
+
+class CourseQuiz(models.Model):
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='course_quizzes')
+    title = models.CharField(max_length=255)
+    pass_score = models.PositiveSmallIntegerField(default=50)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.subject.title} - {self.title}"
+
+
+class CourseQuizQuestion(models.Model):
+    quiz = models.ForeignKey(CourseQuiz, on_delete=models.CASCADE, related_name='questions')
+    question = models.TextField()
+    option_a = models.CharField(max_length=255)
+    option_b = models.CharField(max_length=255)
+    option_c = models.CharField(max_length=255)
+    option_d = models.CharField(max_length=255)
+    correct_option = models.CharField(max_length=1, choices=[('A', 'A'), ('B', 'B'), ('C', 'C'), ('D', 'D')])
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"{self.quiz.title} Q{self.id}"
+
+
+class QuizAttempt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_attempts')
+    quiz = models.ForeignKey(CourseQuiz, on_delete=models.CASCADE, related_name='attempts')
+    score = models.PositiveSmallIntegerField(default=0)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-submitted_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.quiz.title} ({self.score}%)"
+
+
+class SubjectProgress(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subject_progress')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='progress_records')
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'subject')
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.subject.title}"
+
+
+class CourseCertificate(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_certificates')
+    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='certificates')
+    certificate_code = models.CharField(max_length=40, unique=True)
+    issued_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'subcategory')
+        ordering = ['-issued_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.subcategory.name} certificate"
+
+
+class ApprovalStatus(models.TextChoices):
+    PENDING = 'pending', 'Pending'
+    APPROVED = 'approved', 'Approved'
+    REJECTED = 'rejected', 'Rejected'
+
+
+class CourseChangeRequest(models.Model):
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_change_requests')
+    course = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='change_requests', blank=True, null=True)
+    requested_category = models.ForeignKey(Category, on_delete=models.SET_NULL, related_name='course_add_requests', blank=True, null=True)
+    requested_course_name = models.CharField(max_length=255, blank=True, default='')
+    requested_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    request_type = models.CharField(max_length=20, choices=[('add', 'Add'), ('update', 'Update'), ('remove', 'Remove')])
+    summary = models.CharField(max_length=255)
+    details = models.TextField(blank=True, default='')
+    status = models.CharField(max_length=20, choices=ApprovalStatus.choices, default=ApprovalStatus.PENDING)
+    admin_note = models.TextField(blank=True, default='')
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='reviewed_change_requests', blank=True, null=True)
+    reviewed_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.course.name} - {self.request_type} ({self.status})"

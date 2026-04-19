@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Login — Teaching Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-orb {
+        animation: floatY 10s ease-in-out infinite;
+    }
+
+    .auth-orb--delay {
+        animation-delay: 1.8s;
+    }
+
+    .auth-card {
+        box-shadow: 0 20px 55px rgba(16, 185, 129, 0.14);
+    }
+
+    .form-input {
+        transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+    }
+
+    .form-input:focus {
+        border-color: #059669;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+        background-color: #ffffff;
+    }
+
+    @keyframes floatY {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-11px); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="relative overflow-hidden pb-12 pt-14 sm:pb-16 lg:pt-20">
+    <div class="absolute inset-0 -z-20 bg-[radial-gradient(860px_350px_at_12%_-10%,rgba(16,185,129,0.24),transparent),radial-gradient(760px_320px_at_92%_-14%,rgba(20,184,166,0.22),transparent),linear-gradient(180deg,#ecfdf5_0%,#f8fafc_55%,#eff6ff_100%)]"></div>
+    <div class="auth-orb absolute -left-10 top-20 -z-10 h-28 w-28 rounded-full bg-gradient-to-br from-emerald-400/40 to-teal-400/25 blur-2xl"></div>
+    <div class="auth-orb auth-orb--delay absolute right-0 top-20 -z-10 h-36 w-36 rounded-full bg-gradient-to-br from-teal-400/35 to-cyan-400/20 blur-3xl sm:right-8"></div>
+
+    <div class="mx-auto grid w-full max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:items-center">
+        <div>
+            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-4 py-1.5 text-xs font-bold tracking-wide text-emerald-700 backdrop-blur sm:text-sm">
+                <i class="fa-solid fa-chalkboard-user"></i>
+                TEACHER DASHBOARD ACCESS
+            </span>
+            <h1 class="mt-5 font-display text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">Manage and Grow <span class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">Your Classroom</span></h1>
+            <p class="mt-4 text-base leading-7 text-slate-600">Course content পরিচালনা, course update, এবং শিক্ষার্থীদের জন্য structured learning experience তৈরি করতে teacher login করুন।</p>
+            <div class="mt-6 flex flex-wrap gap-2 text-xs font-semibold sm:text-sm">
+                <span class="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700"><i class="fa-solid fa-pen-to-square"></i> Edit Content</span>
+                <span class="rounded-full bg-teal-100 px-3 py-1 text-teal-700"><i class="fa-solid fa-layer-group"></i> Course Control</span>
+                <span class="rounded-full bg-cyan-100 px-3 py-1 text-cyan-700"><i class="fa-solid fa-chart-column"></i> Better Experience</span>
+            </div>
+        </div>
+
+        <div class="auth-card rounded-3xl border border-white/70 bg-white/85 p-6 backdrop-blur sm:p-8">
+            <h2 class="text-2xl font-bold text-slate-900">Teacher Login</h2>
+            <p class="mt-1 text-sm text-slate-600">শিক্ষক account দিয়ে secure sign in করুন।</p>
+
+            {% if form.non_field_errors %}
+            <div class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <form method="post" class="mt-5 space-y-4">
+                {% csrf_token %}
+                {% if request.GET.next %}
+                <input type="hidden" name="next" value="{{ request.GET.next }}">
+                {% endif %}
+
+                <div>
+                    <label for="id_email" class="mb-1.5 block text-sm font-semibold text-slate-700">Email</label>
+                    <input id="id_email" type="email" name="email" value="{{ form.email.value|default:'' }}" required class="form-input w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 outline-none">
+                    {% if form.email.errors %}
+                    <p class="mt-1 text-sm text-rose-600">{{ form.email.errors|striptags }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="id_password" class="mb-1.5 block text-sm font-semibold text-slate-700">Password</label>
+                    <div class="relative">
+                        <input id="id_password" type="password" name="password" required class="form-input w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 pr-11 text-slate-900 outline-none">
+                        <button type="button" data-toggle-password="id_password" class="absolute inset-y-0 right-2 my-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Show password">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                    {% if form.password.errors %}
+                    <p class="mt-1 text-sm text-rose-600">{{ form.password.errors|striptags }}</p>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:from-emerald-700 hover:to-teal-700">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Login as Teacher
+                </button>
+            </form>
+
+            <p class="mt-5 text-sm text-slate-600">Need a teacher account? <a href="{% url 'content:teacher_signup' %}" class="font-semibold text-emerald-700 hover:text-emerald-900">Signup here</a></p>
+            <p class="mt-2 text-sm text-slate-600">Student account? <a href="{% url 'content:student_login' %}" class="font-semibold text-blue-700 hover:text-blue-900">Student Login</a></p>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const inputId = btn.getAttribute('data-toggle-password');
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (!input) return;
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            icon.className = isPassword ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+        });
+    });
+</script>
+{% endblock %}

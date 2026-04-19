@@ -1,6 +1,7 @@
 
 from pathlib import Path
 import os
+from datetime import timedelta
 import dj_database_url
 from decouple import config
 from .unfold_config import UNFOLD
@@ -43,6 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'content',
 ]
 
@@ -124,10 +127,46 @@ STORAGES = {
 }
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = config('MEDIA_ROOT', default=str(BASE_DIR / 'media'))
+MEDIA_ROOT_ENV = config('MEDIA_ROOT', default='').strip()
+RENDER_DISK_PATH = config('RENDER_DISK_PATH', default='').strip()
 
-# Render persistent disk support (if mounted at /var/data)
-if config('RENDER', default='') and not config('MEDIA_ROOT', default=''):
-    MEDIA_ROOT = '/var/data/media'
+if MEDIA_ROOT_ENV:
+    MEDIA_ROOT = Path(MEDIA_ROOT_ENV)
+elif RENDER_DISK_PATH:
+    MEDIA_ROOT = Path(RENDER_DISK_PATH) / 'media'
+else:
+    # Safe default for local and Render instances without a mounted disk
+    MEDIA_ROOT = BASE_DIR / 'media'
+
+try:
+    MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+except OSError:
+    # Last-resort writable location on containerized platforms
+    MEDIA_ROOT = Path('/tmp/interactive-media')
+    MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+
+MEDIA_ROOT = str(MEDIA_ROOT)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_URL = 'content:login'
+LOGIN_REDIRECT_URL = 'content:home'
+LOGOUT_REDIRECT_URL = 'content:home'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny',
+    ),
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}

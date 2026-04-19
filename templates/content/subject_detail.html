@@ -4,118 +4,131 @@
 {% block title %}{{ subject.title }} — {{ subcategory.name }} — Teaching Platform{% endblock %}
 {% block meta_description %}{{ subject.title }} — Interactive lesson with multimedia explanations.{% endblock %}
 
+{% block extra_css %}
+<style>
+    .highlight-link {
+        cursor: pointer;
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 2px;
+        font-weight: 700;
+    }
+    .link-media-blue {
+        color: #1d4ed8;
+    }
+    .link-media-red {
+        color: #dc2626;
+    }
+</style>
+{% endblock %}
+
 {% block breadcrumb %}
-<nav class="breadcrumb-bar">
-    <div class="container">
-        <ol class="breadcrumb">
-            <li><a href="{% url 'content:home' %}"><i class="fa-solid fa-house"></i></a></li>
-            <li><a href="{% url 'content:category_detail' category.slug %}">{{ category.name }}</a></li>
-            <li><a href="{% url 'content:subcategory_detail' category.slug subcategory.slug %}">{{ subcategory.name }}</a></li>
-            <li class="active">{{ subject.title }}</li>
+<nav class="border-y border-slate-200 bg-slate-100/80">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <ol class="flex items-center gap-3 py-3 text-sm text-slate-600">
+            <li><a href="{% url 'content:home' %}" class="hover:text-slate-900"><i class="fa-solid fa-house"></i></a></li>
+            <li>/</li>
+            <li><a href="{% url 'content:category_detail' category.slug %}" class="hover:text-slate-900">{{ category.name }}</a></li>
+            <li>/</li>
+            <li><a href="{% url 'content:category_details' category.slug subcategory.slug %}" class="hover:text-slate-900">Details</a></li>
+            <li>/</li>
+            <li class="truncate font-semibold text-slate-800">{{ subject.title }}</li>
         </ol>
     </div>
 </nav>
 {% endblock %}
 
 {% block content %}
-<div class="subject-page container">
-
-    <!-- Subject Header -->
-    <div class="subject-page-header">
-        <div class="subject-header-top">
-            <div>
-                <div class="subject-path">
-                    <span class="path-tag">{{ category.name }}</span>
-                    <i class="fa-solid fa-chevron-right"></i>
-                    <span class="path-tag">{{ subcategory.name }}</span>
+<section class="py-8 sm:py-10">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <div class="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1">{{ category.name }}</span>
+                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1">{{ subcategory.name }}</span>
+                    </div>
+                    <h1 class="font-display text-2xl font-bold text-slate-900 sm:text-3xl">{{ subject.title }}</h1>
+                    <p class="mt-1 text-sm text-slate-600"><i class="fa-regular fa-clock"></i> Last updated: {{ subject.updated_at|date:"F d, Y" }}</p>
                 </div>
-                <h1 class="subject-page-title">{{ subject.title }}</h1>
-                <div class="subject-updated">
-                    <i class="fa-regular fa-clock"></i> Last updated: {{ subject.updated_at|date:"F d, Y" }}
-                </div>
+                {% if user.is_staff %}
+                <a href="{% url 'content:subject_editor' subject.id %}" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 font-semibold text-white transition hover:bg-emerald-500" id="btn-open-editor" title="Open Frontend Editor">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span>Edit Content</span>
+                </a>
+                {% elif user.is_authenticated %}
+                <form method="post" action="{% url 'content:mark_subject_complete' subject.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2.5 font-semibold text-white transition hover:from-blue-700 hover:to-cyan-700">
+                        <i class="fa-solid fa-circle-check"></i>
+                        Mark Complete
+                    </button>
+                </form>
+                {% endif %}
             </div>
-            <!-- Edit Button -->
-            <a href="{% url 'content:subject_editor' subject.id %}" class="btn btn-editor" id="btn-open-editor" title="Open Frontend Editor" style="background-color: #16a34a; border-color: #16a34a; color: #ffffff; font-weight: 700;">
-                <i class="fa-solid fa-pen-to-square"></i>
-                <span>Edit Content</span>
-            </a>
+        </div>
+
+        <div class="mt-6 grid gap-6 lg:grid-cols-12">
+            <div class="lg:col-span-8 xl:col-span-9">
+                {% if interactive_contents %}
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                    <h2 class="text-lg font-bold text-slate-900"><i class="fa-solid fa-wand-magic-sparkles text-indigo-600"></i> Multimedia Content Examples</h2>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        {% for ic in interactive_contents %}
+                        <button
+                            class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
+                            data-content-id="{{ ic.id }}"
+                            id="toolbar-btn-{{ ic.id }}"
+                            title="{{ ic.title }}">
+                            {% if ic.content_type == 'text' %}<i class="fa-solid fa-font text-blue-600"></i>
+                            {% elif ic.content_type == 'image' %}<i class="fa-solid fa-image text-emerald-600"></i>
+                            {% elif ic.content_type == 'audio' %}<i class="fa-solid fa-headphones text-purple-600"></i>
+                            {% elif ic.content_type == 'video' %}<i class="fa-solid fa-video text-rose-600"></i>
+                            {% elif ic.content_type == 'youtube' %}<i class="fa-brands fa-youtube text-red-600"></i>
+                            {% endif %}
+                            <span>{{ ic.title|truncatechars:26 }}</span>
+                            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <article class="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                    <h2 class="mb-4 text-xl font-bold text-slate-900"><i class="fa-solid fa-file-lines text-blue-600"></i> Lesson Content</h2>
+                    <div class="prose prose-slate max-w-none" id="articleBody">
+                        {{ subject.body_content|safe }}
+                    </div>
+                </article>
+            </div>
+
+            {% if accordion_sections %}
+            <aside class="lg:col-span-4 xl:col-span-3">
+                <div class="sticky top-24 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                    <div class="mb-3 flex items-center gap-2 text-lg font-bold text-slate-900">
+                        <i class="fa-solid fa-list text-indigo-600"></i> Expandable Content
+                    </div>
+                    <div class="space-y-2" id="subjectAccordion">
+                        {% for section in accordion_sections %}
+                        <div class="accordion-item rounded-xl border border-slate-200 {% if section.is_open_by_default %}accordion-item--open{% endif %}" id="acc-{{ section.id }}">
+                            <button class="accordion-trigger flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left font-semibold text-slate-800 hover:bg-slate-50" aria-expanded="{% if section.is_open_by_default %}true{% else %}false{% endif %}" aria-controls="acc-body-{{ section.id }}">
+                                <span>{{ section.title }}</span>
+                                <i class="fa-solid fa-chevron-down accordion-icon text-xs text-slate-500"></i>
+                            </button>
+                            <div class="accordion-body border-t border-slate-100 px-3 py-3 text-sm text-slate-700" id="acc-body-{{ section.id }}" {% if not section.is_open_by_default %}hidden{% endif %}>
+                                <div class="prose prose-slate prose-sm max-w-none accordion-content">{{ section.content|safe }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </aside>
+            {% endif %}
         </div>
     </div>
+</section>
 
-    <!-- Two-column layout -->
-    <div class="subject-layout">
-
-        <!-- Main Content Panel -->
-        <div class="subject-main">
-
-            <!-- Interactive Content Toolbar (Demo buttons) -->
-            {% if interactive_contents %}
-            <div class="content-toolbar-section">
-                <h2 class="toolbar-heading">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    Multimedia Content Examples
-                </h2>
-                <div class="toolbar-buttons">
-                    {% for ic in interactive_contents %}
-                    <button
-                        class="toolbar-btn toolbar-btn--{{ ic.content_type }}"
-                        data-content-id="{{ ic.id }}"
-                        id="toolbar-btn-{{ ic.id }}"
-                        title="{{ ic.title }}">
-                        {% if ic.content_type == 'text' %}<i class="fa-solid fa-font"></i> <span>{{ ic.title|truncatechars:20 }}</span>
-                        {% elif ic.content_type == 'image' %}<i class="fa-solid fa-image"></i> <span>{{ ic.title|truncatechars:20 }}</span>
-                        {% elif ic.content_type == 'audio' %}<i class="fa-solid fa-headphones"></i> <span>{{ ic.title|truncatechars:20 }}</span>
-                        {% elif ic.content_type == 'video' %}<i class="fa-solid fa-video"></i> <span>{{ ic.title|truncatechars:20 }}</span>
-                        {% elif ic.content_type == 'youtube' %}<i class="fa-brands fa-youtube"></i> <span>{{ ic.title|truncatechars:20 }}</span>
-                        {% endif %}
-                        <i class="fa-solid fa-magnifying-glass toolbar-zoom"></i>
-                    </button>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Main Body Content -->
-            <div class="content-article">
-                <h2 class="article-heading">
-                    <i class="fa-solid fa-file-lines"></i>
-                    News Article with Interactive Elements
-                </h2>
-                <div class="article-body" id="articleBody">
-                    {{ subject.body_content|safe }}
-                </div>
-            </div>
-
-        </div><!-- /subject-main -->
-
-        <!-- Sidebar — Accordion Sections -->
-        {% if accordion_sections %}
-        <aside class="subject-sidebar">
-            <div class="sidebar-card">
-                <div class="sidebar-title">
-                    <i class="fa-solid fa-list"></i> Expandable Content
-                </div>
-                <div class="accordion" id="subjectAccordion">
-                    {% for section in accordion_sections %}
-                    <div class="accordion-item {% if section.is_open_by_default %}accordion-item--open{% endif %}" id="acc-{{ section.id }}">
-                        <button class="accordion-trigger" aria-expanded="{% if section.is_open_by_default %}true{% else %}false{% endif %}" aria-controls="acc-body-{{ section.id }}">
-                            <span>{{ section.title }}</span>
-                            <i class="fa-solid fa-chevron-down accordion-icon"></i>
-                        </button>
-                        <div class="accordion-body" id="acc-body-{{ section.id }}" {% if not section.is_open_by_default %}hidden{% endif %}>
-                            <div class="accordion-content">{{ section.content|safe }}</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </aside>
-        {% endif %}
-
-    </div><!-- /subject-layout -->
-</div>
-
-<!-- Hidden content data for JS -->
 <script id="interactiveData" type="application/json">
 {
     "apiUrl": "{% url 'content:get_interactive_content' 0 %}"
