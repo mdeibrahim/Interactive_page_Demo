@@ -4,7 +4,7 @@ from django.db.models import Count
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 
-from content.models import AccordionSection, Category, InteractiveContent, Subject, SubCategory
+from content.models import AccordionSection, Category, InteractiveContent, Subject, SubCategory, Module
 
 
 @require_http_methods(["GET"])
@@ -17,6 +17,7 @@ def admin_dashboard(request):
     subjects_count = Subject.objects.count()
     accordion_sections_count = AccordionSection.objects.count()
     interactive_contents_count = InteractiveContent.objects.count()
+    modules_count = Module.objects.count()
 
     stats = {
         "categories_count": categories_count,
@@ -24,6 +25,7 @@ def admin_dashboard(request):
         "subjects_count": subjects_count,
         "accordion_sections_count": accordion_sections_count,
         "interactive_contents_count": interactive_contents_count,
+        "modules_count": modules_count,
         "total_users": User.objects.count(),
         "staff_users": User.objects.filter(is_staff=True).count(),
     }

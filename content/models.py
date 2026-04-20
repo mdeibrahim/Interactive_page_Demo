@@ -98,9 +98,38 @@ class SubCategory(models.Model):
         return self.price <= 0
 
 
+class Course(models.Model):
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, related_name='courses', blank=True, null=True)
+    teacher = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='courses', blank=True, null=True)
+    old_subcategory = models.OneToOneField(
+        SubCategory,
+        on_delete=models.SET_NULL,
+        related_name='migrated_course',
+        blank=True,
+        null=True,
+    )
+    name = models.CharField(max_length=255)
+    slug = models.SlugField()
+    description = models.TextField(blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Course'
+        verbose_name_plural = 'Courses'
+        unique_together = ('category', 'slug')
+        ordering = ['name']
+
+    def __str__(self):
+        if self.category:
+            return f"{self.category.name} -> {self.name}"
+        return self.name
+
+
 class Module(models.Model):
     """A logical module inside a SubCategory/Course. A course can have many modules."""
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='modules')
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='modules', blank=True, null=True)
     title = models.CharField(max_length=255)
     slug = models.SlugField()
     description = models.TextField(blank=True)
@@ -120,6 +149,7 @@ class Module(models.Model):
 class Subject(models.Model):
     """A subject (details page) under a subcategory"""
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='subjects')
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='subjects', blank=True, null=True)
     title = models.CharField(max_length=500)
     slug = models.SlugField()
     body_content = models.TextField(
@@ -232,6 +262,7 @@ class InteractiveContent(models.Model):
 class ModulePurchase(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='module_purchases')
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='purchases')
+    course = models.ForeignKey('Course', on_delete=models.SET_NULL, related_name='purchases', blank=True, null=True)
     is_purchased = models.BooleanField(default=False)
     purchased_at = models.DateTimeField(auto_now_add=True)
 
@@ -248,6 +279,7 @@ class CourseVideo(models.Model):
     module = models.ForeignKey('Module', on_delete=models.CASCADE, related_name='course_videos', blank=True, null=True)
     title = models.CharField(max_length=255)
     video_url = models.URLField()
+    duration_seconds = models.PositiveIntegerField(default=0)
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -255,7 +287,31 @@ class CourseVideo(models.Model):
         ordering = ['order', 'created_at']
 
     def __str__(self):
-        return f"{self.subject.title} - {self.title}"
+        source = None
+        if self.module:
+            try:
+                source = self.module.title
+            except Exception:
+                source = None
+        if not source and self.subject:
+            try:
+                source = self.subject.title
+            except Exception:
+                source = None
+        source = source or 'Content'
+        return f"{source} - {self.title}"
+
+    @property
+    def duration(self):
+        # human-friendly duration e.g. 1:23 or 1:02:45
+        secs = int(self.duration_seconds or 0)
+        if secs < 60:
+            return f"0:{secs:02d}"
+        minutes, seconds = divmod(secs, 60)
+        hours, minutes = divmod(minutes, 60)
+        if hours:
+            return f"{hours}:{minutes:02d}:{seconds:02d}"
+        return f"{minutes}:{seconds:02d}"
 
 
 class CourseQuiz(models.Model):
@@ -270,7 +326,19 @@ class CourseQuiz(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.subject.title} - {self.title}"
+        source = None
+        if self.module:
+            try:
+                source = self.module.title
+            except Exception:
+                source = None
+        if not source and self.subject:
+            try:
+                source = self.subject.title
+            except Exception:
+                source = None
+        source = source or 'Quiz'
+        return f"{source} - {self.title}"
 
 
 class CourseQuizQuestion(models.Model):
@@ -321,6 +389,7 @@ class SubjectProgress(models.Model):
 class CourseCertificate(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_certificates')
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='certificates')
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='certificates', blank=True, null=True)
     certificate_code = models.CharField(max_length=40, unique=True)
     issued_at = models.DateTimeField(auto_now_add=True)
 
@@ -341,6 +410,7 @@ class ApprovalStatus(models.TextChoices):
 class CourseChangeRequest(models.Model):
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_change_requests')
     course = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='change_requests', blank=True, null=True)
+    course_new = models.ForeignKey('Course', on_delete=models.SET_NULL, related_name='change_requests_new', blank=True, null=True)
     requested_category = models.ForeignKey(Category, on_delete=models.SET_NULL, related_name='course_add_requests', blank=True, null=True)
     requested_course_name = models.CharField(max_length=255, blank=True, default='')
     requested_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)

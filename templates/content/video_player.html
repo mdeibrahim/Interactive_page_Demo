@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ video.title }} — {{ module.title }} — {{ subcategory.name }}{% endblock %}
+
+{% block content %}
+<section class="py-8 sm:py-10">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid gap-6 lg:grid-cols-12 lg:items-start">
+            <div class="lg:col-span-8">
+                <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+                    <h1 class="text-2xl font-bold text-slate-900">{{ video.title }}</h1>
+                    <p class="text-sm text-slate-500 mt-1">{{ module.title }} — {{ subcategory.name }}</p>
+
+                    <div class="mt-4">
+                        {% if not has_access %}
+                        <div class="rounded-lg border border-rose-200 bg-rose-50 p-6 text-center text-rose-700">
+                            <p class="font-bold">এই কনটেন্টটি আনলক করা প্রয়োজন</p>
+                            <a href="{% url 'content:buy_module' category.slug subcategory.slug %}" class="mt-3 inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 font-bold text-slate-900">কিনুন / আনলক করুন</a>
+                        </div>
+                        {% else %}
+                        <div class="aspect-video w-full overflow-hidden rounded-lg bg-black">
+                            {% if embed.type == 'youtube' %}
+                            <iframe class="w-full h-full" src="{{ embed.embed_url }}" frameborder="0" allowfullscreen></iframe>
+                            {% elif embed.type == 'mp4' %}
+                            <video class="w-full h-full" controls>
+                                <source src="{{ embed.url }}" type="video/mp4">
+                                আপনার ব্রাউজার ভিডিও ট্যাগ সমর্থন করে না।
+                            </video>
+                            {% else %}
+                            <div class="flex h-64 items-center justify-center text-center text-slate-400">
+                                <a href="{{ embed.url }}" target="_blank" class="underline">Open video in new tab</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <h3 class="text-sm font-semibold text-slate-800">Description</h3>
+                            <p class="mt-2 text-sm text-slate-600">{{ video.title }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="lg:col-span-4">
+                <div class="sticky top-24 space-y-4">
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <h3 class="text-lg font-bold text-slate-900">{{ module.title }}</h3>
+                        <p class="mt-1 text-sm text-slate-600">{{ videos.count }} videos</p>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <ul class="space-y-2">
+                            {% for v in videos %}
+                            <li>
+                                <a href="{% url 'content:play_video' category.slug subcategory.slug module.slug v.id %}" class="flex items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-slate-50 {% if v.id == video.id %}bg-slate-100{% endif %}">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-medium text-slate-800">{{ forloop.counter }}. {{ v.title }}</p>
+                                        <p class="mt-1 text-xs text-slate-500">{{ v.title }}</p>
+                                    </div>
+                                    <div class="text-xs text-slate-500">{{ v.duration }}</div>
+                                </a>
+                            </li>
+                            {% empty %}
+                            <li class="text-sm text-slate-500">No videos in this module yet.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -83,40 +83,34 @@
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                     <h2 class="text-xl font-bold text-slate-900"><i class="fa-solid fa-list-ul text-blue-600"></i> কোর্স কনটেন্ট</h2>
 
-                    {% if subjects %}
+                    {% if modules %}
                     <div class="mt-4 space-y-3">
-                        {% for subject in subjects %}
-                        {% if has_access %}
-                        <a href="{% url 'content:subject_detail' category.slug subcategory.slug subject.slug %}" class="group flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-slate-300 hover:bg-white">
+                        {% for module in modules %}
+                        <div class="group flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-slate-300 hover:bg-white">
                             <div class="flex min-w-0 items-start gap-3">
                                 <span class="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">{{ forloop.counter }}</span>
                                 <div class="min-w-0">
-                                    <h3 class="truncate text-sm font-semibold text-slate-800 sm:text-base">{{ subject.title }}</h3>
+                                    <h3 class="truncate text-sm font-semibold text-slate-800 sm:text-base">{{ module.title }}</h3>
                                     <div class="mt-1 flex flex-wrap gap-3 text-xs text-slate-500">
-                                        <span><i class="fa-solid fa-layer-group"></i> {{ subject.accordion_sections.count }} sections</span>
-                                        <span><i class="fa-solid fa-link"></i> {{ subject.interactive_contents.count }} items</span>
+                                        <span><i class="fa-solid fa-video"></i> {{ module.course_videos.count }} videos</span>
                                     </div>
                                 </div>
                             </div>
-                            <i class="fa-solid fa-angle-right text-slate-400 transition group-hover:text-slate-700"></i>
-                        </a>
-                        {% else %}
-                        <div class="flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
-                            <div class="flex min-w-0 items-start gap-3">
-                                <span class="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-xs font-bold text-white">{{ forloop.counter }}</span>
-                                <div class="min-w-0">
-                                    <h3 class="truncate text-sm font-semibold text-slate-800 sm:text-base">{{ subject.title }}</h3>
-                                    <p class="mt-1 text-xs font-medium text-rose-700"><i class="fa-solid fa-lock"></i> Unlock to access this lesson</p>
-                                </div>
-                            </div>
-                            <i class="fa-solid fa-lock text-rose-500"></i>
+                            {% if has_access %}
+                            {% if module.first_video %}
+                            <a href="{% url 'content:play_video' category.slug subcategory.slug module.slug module.first_video.id %}" class="inline-flex items-center gap-2 rounded-lg bg-amber-400 px-3 py-1 text-sm font-semibold text-slate-900">Play</a>
+                            {% else %}
+                            <span class="text-sm text-slate-500">No videos</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="inline-flex items-center gap-2 rounded-lg bg-rose-100 px-3 py-1 text-sm font-semibold text-rose-700">Locked</span>
+                            {% endif %}
                         </div>
-                        {% endif %}
                         {% endfor %}
                     </div>
                     {% else %}
                     <div class="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-slate-600">
-                        No lessons added yet.
+                        No modules added yet.
                     </div>
                     {% endif %}
                 </div>
@@ -171,17 +165,19 @@
                             </div>
 
                             {% if has_access %}
+                            {% if first_video %}
+                            <a href="{% url 'content:play_video' category.slug subcategory.slug first_video.module.slug first_video.id %}" class="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-yellow-400 px-4 py-2.5 font-bold text-slate-900 transition hover:bg-yellow-300">
+                                শুরু করুন
+                            </a>
+                            {% else %}
                             <a href="#" onclick="event.preventDefault(); document.querySelector('#course-list-jump').scrollIntoView({behavior:'smooth'});" class="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-yellow-400 px-4 py-2.5 font-bold text-slate-900 transition hover:bg-yellow-300">
                                 শুরু করুন
                             </a>
+                            {% endif %}
                             {% elif user.is_authenticated %}
-                            <form method="post" action="{% url 'content:buy_module' category.slug subcategory.slug %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value="{{ request.path }}">
-                                <button type="submit" class="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-yellow-400 px-4 py-2.5 font-bold text-slate-900 transition hover:bg-yellow-300">
-                                    {% if subcategory.is_free %}এখনই ফ্রি আনলক{% else %}এখনই কিনুন{% endif %}
-                                </button>
-                            </form>
+                            <a href="{% url 'content:start_purchase' category.slug subcategory.slug %}" class="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-yellow-400 px-4 py-2.5 font-bold text-slate-900 transition hover:bg-yellow-300">
+                                {% if subcategory.is_free %}এখনই ফ্রি আনলক{% else %}এখনই কিনুন{% endif %}
+                            </a>
                             {% else %}
                             <a href="{% url 'content:login' %}?next={{ request.path }}" class="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-yellow-400 px-4 py-2.5 font-bold text-slate-900 transition hover:bg-yellow-300">
                                 লগইন করে কিনুন

@@ -345,7 +345,33 @@
 {% endblock %}
 
 {% block content %}
+<style>
+.dashboard-layout{display:grid;grid-template-columns:240px 1fr;gap:18px;align-items:start}
+.dashboard-sidebar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;height:fit-content;position:sticky;top:18px}
+.sidebar-header h3{margin:0 0 8px;font-size:15px;color:var(--text-1)}
+.sidebar-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.sidebar-list a{display:flex;justify-content:space-between;align-items:center;text-decoration:none;padding:9px 10px;border-radius:8px;color:var(--text-1)}
+.sidebar-list a:hover{background:var(--brand-soft);border-color:#bae6fd;text-decoration:none}
+.sidebar-list .badge{background:#f8fafc;border:1px solid var(--border);padding:4px 8px;border-radius:999px;font-weight:700;color:var(--text-1);font-size:12px}
+@media (max-width:900px){.dashboard-layout{grid-template-columns:1fr}.dashboard-sidebar{order:-1;position:relative;top:auto}}
+</style>
 <div class="dashboard-shell">
+    <div class="dashboard-layout">
+        <aside class="dashboard-sidebar" role="navigation" aria-label="Admin shortcuts">
+            <div class="sidebar-header">
+                <h3>Shortcuts</h3>
+            </div>
+            <nav>
+                <ul class="sidebar-list">
+                    <li><a href="{% url 'admin:content_category_changelist' %}">Categories <span class="badge">{{ stats.categories_count }}</span></a></li>
+                    <li><a href="{% url 'admin:content_subcategory_changelist' %}">Subcategories <span class="badge">{{ stats.subcategories_count }}</span></a></li>
+                    <li><a href="{% url 'admin:content_subject_changelist' %}">Subjects <span class="badge">{{ stats.subjects_count }}</span></a></li>
+                    <li><a href="{% url 'admin:content_interactivecontent_changelist' %}">Interactive Items <span class="badge">{{ stats.interactive_contents_count }}</span></a></li>
+                    <li><a href="{% url 'admin:content_module_changelist' %}">Modules <span class="badge">{{ stats.modules_count }}</span></a></li>
+                </ul>
+            </nav>
+        </aside>
+        <main class="dashboard-main">
     <div class="hero">
         <div>
             <h1>Content Operations Dashboard</h1>
@@ -569,6 +595,8 @@
                 </table>
             </div>
         </section>
+    </div>
+        </main>
     </div>
 </div>
 {% endblock %}

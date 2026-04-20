@@ -46,6 +46,7 @@ urlpatterns = [
     path('category/<slug:cat_slug>/', views.category_detail, name='category_detail'),
     path('category/<slug:cat_slug>/details/<slug:subcat_slug>/', views.subcategory_detail, name='category_details'),
     path('category/<slug:cat_slug>/<slug:subcat_slug>/', views.subcategory_detail, name='subcategory_detail'),
+    path('category/<slug:cat_slug>/<slug:subcat_slug>/module/<slug:module_slug>/video/<int:video_id>/', views.play_video, name='play_video'),
     path('category/<slug:cat_slug>/<slug:subcat_slug>/buy/', views.buy_module, name='buy_module'),
     path('category/<slug:cat_slug>/<slug:subcat_slug>/start-purchase/', views.start_purchase, name='start_purchase'),
     path('category/<slug:cat_slug>/<slug:subcat_slug>/purchase/', views.course_purchase, name='course_purchase'),

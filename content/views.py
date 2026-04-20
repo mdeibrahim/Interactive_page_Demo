@@ -2,7 +2,7 @@ import json
 import uuid
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
-from django.db.models import Avg, Count, OuterRef, Q, Subquery
+from django.db.models import Avg, Count, OuterRef, Q, Subquery, Prefetch
 from django.contrib import messages
 from django.contrib.auth import login
 from django.conf import settings
@@ -22,6 +22,7 @@ from .models import (
     CourseVideo,
     Category,
     SubCategory,
+    Module,
     Subject,
     SubjectProgress,
     AccordionSection,
@@ -78,17 +79,94 @@ def subcategory_detail(request, cat_slug, subcat_slug):
     """List subjects under a subcategory"""
     category = get_object_or_404(Category, slug=cat_slug)
     subcategory = get_object_or_404(SubCategory, category=category, slug=subcat_slug)
+    # Treat SubCategory as Course and show its Modules (course structure)
+    modules_qs = subcategory.modules.prefetch_related(
+        Prefetch('course_videos', queryset=CourseVideo.objects.order_by('order', 'created_at'))
+    ).all()
+    modules = list(modules_qs)
+    # attach first_video attribute to each module (useful in templates)
+    for m in modules:
+        vids = list(m.course_videos.all())
+        m.first_video = vids[0] if vids else None
+
     subjects = subcategory.subjects.all()
     has_access = _has_module_access(request.user, subcategory)
     related_subcategories = category.subcategories.exclude(id=subcategory.id).prefetch_related('subjects')[:3]
     owned_subcategory_ids = _get_owned_subcategory_ids(request.user)
+    # find first available video to use for "Start" CTA
+    first_video = None
+    for m in modules:
+        if getattr(m, 'first_video', None):
+            first_video = m.first_video
+            break
     return render(request, 'content/subcategory_detail.html', {
         'category': category,
         'subcategory': subcategory,
+        'modules': modules,
         'subjects': subjects,
         'has_access': has_access,
         'related_subcategories': related_subcategories,
         'owned_subcategory_ids': owned_subcategory_ids,
+        'first_video': first_video,
+    })
+
+
+def play_video(request, cat_slug, subcat_slug, module_slug, video_id):
+    """Play a video inside a module with a right-side video list"""
+    category = get_object_or_404(Category, slug=cat_slug)
+    subcategory = get_object_or_404(SubCategory, category=category, slug=subcat_slug)
+    module = get_object_or_404(Module, subcategory=subcategory, slug=module_slug)
+    video = get_object_or_404(CourseVideo, id=video_id, module=module)
+
+    has_access = _has_module_access(request.user, subcategory)
+    videos = module.course_videos.order_by('order', 'created_at').all()
+
+    # derive embed info for youtube/mp4
+    def _get_embed(url):
+        from urllib.parse import urlparse, parse_qs
+        import re
+        if not url:
+            return {'type': 'link', 'url': ''}
+        host = urlparse(url).netloc.lower()
+        if 'youtube.com' in host or 'youtu.be' in host:
+            # extract video id
+            video_id = None
+            try:
+                parsed = urlparse(url)
+                host2 = (parsed.netloc or '').lower().replace('www.', '')
+                if host2 in ('youtube.com', 'm.youtube.com') and parsed.path == '/watch':
+                    video_id = (parse_qs(parsed.query).get('v') or [None])[0]
+                elif 'shorts' in parsed.path:
+                    video_id = parsed.path.split('/shorts/', 1)[1].split('/', 1)[0]
+                elif parsed.path.startswith('/embed/'):
+                    video_id = parsed.path.split('/embed/', 1)[1].split('/', 1)[0]
+                elif host2 == 'youtu.be':
+                    video_id = parsed.path.lstrip('/').split('/', 1)[0]
+            except Exception:
+                video_id = None
+            if not video_id:
+                m = re.search(r'(?:v=|youtu\.be/|/embed/|/shorts/)([a-zA-Z0-9_-]{11})', url)
+                if m:
+                    video_id = m.group(1)
+            if video_id:
+                return {'type': 'youtube', 'embed_url': f'https://www.youtube.com/embed/{video_id}'}
+            return {'type': 'link', 'url': url}
+
+        if url.lower().endswith('.mp4'):
+            return {'type': 'mp4', 'url': url}
+
+        return {'type': 'link', 'url': url}
+
+    embed = _get_embed(video.video_url)
+
+    return render(request, 'content/video_player.html', {
+        'category': category,
+        'subcategory': subcategory,
+        'module': module,
+        'video': video,
+        'videos': videos,
+        'has_access': has_access,
+        'embed': embed,
     })
 
 
