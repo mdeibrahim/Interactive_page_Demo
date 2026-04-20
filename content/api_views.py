@@ -50,7 +50,11 @@ def _has_detail_access(user, detail):
         return True
     if not user or not user.is_authenticated:
         return False
-    return ModulePurchase.objects.filter(user=user, subcategory=detail).exists()
+    return ModulePurchase.objects.filter(
+        user=user,
+        subcategory=detail,
+        is_purchased=True,
+    ).exists()
 
 
 def _blacklist_by_jti(jti):
@@ -340,7 +344,10 @@ class BuyDetailAPIView(APIView):
         if not detail:
             return Response({'detail': 'Details not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        ModulePurchase.objects.get_or_create(user=request.user, subcategory=detail)
+        purchase, _ = ModulePurchase.objects.get_or_create(user=request.user, subcategory=detail)
+        if not purchase.is_purchased:
+            purchase.is_purchased = True
+            purchase.save(update_fields=['is_purchased'])
 
         return Response(
             {
@@ -356,7 +363,10 @@ class MyModulesAPIView(APIView):
     permission_classes = [IsAuthenticated, IsStudent]
 
     def get(self, request):
-        purchases = ModulePurchase.objects.filter(user=request.user).select_related('subcategory', 'subcategory__category')
+        purchases = ModulePurchase.objects.filter(
+            user=request.user,
+            is_purchased=True,
+        ).select_related('subcategory', 'subcategory__category')
         data = [
             {
                 'id': p.id,

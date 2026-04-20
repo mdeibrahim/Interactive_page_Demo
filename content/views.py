@@ -197,7 +197,10 @@ def subject_detail(request, cat_slug, subcat_slug, subject_slug):
 
 @login_required
 def my_modules(request):
-    purchases = ModulePurchase.objects.filter(user=request.user).select_related('subcategory', 'subcategory__category')
+    purchases = ModulePurchase.objects.filter(
+        user=request.user,
+        is_purchased=True,
+    ).select_related('subcategory', 'subcategory__category')
     return render(request, 'content/my_modules.html', {'purchases': purchases})
 
 
@@ -232,7 +235,7 @@ def teacher_dashboard(request):
     add_course_form = NewCourseAddRequestForm()
 
     for course in courses:
-        purchases = course.purchases.select_related('user').all()
+        purchases = course.purchases.filter(is_purchased=True).select_related('user')
         student_count = purchases.count()
         total_students += student_count
         total_subjects = course.subjects.count()
@@ -270,7 +273,7 @@ def teacher_course_detail(request, course_id):
         return redirect('content:student_dashboard')
 
     course = get_object_or_404(SubCategory.objects.select_related('category', 'teacher'), id=course_id, teacher=request.user)
-    purchases = course.purchases.select_related('user').order_by('-purchased_at')
+    purchases = course.purchases.filter(is_purchased=True).select_related('user').order_by('-purchased_at')
     students = []
     for purchase in purchases:
         profile, _ = UserProfile.objects.get_or_create(
@@ -376,7 +379,10 @@ def student_dashboard(request):
     if _is_teacher(request.user):
         return redirect('content:teacher_dashboard')
 
-    purchases = ModulePurchase.objects.filter(user=request.user).select_related('subcategory', 'subcategory__category')
+    purchases = ModulePurchase.objects.filter(
+        user=request.user,
+        is_purchased=True,
+    ).select_related('subcategory', 'subcategory__category')
     purchased_course_ids = set(purchases.values_list('subcategory_id', flat=True))
     available_courses = SubCategory.objects.select_related('category').exclude(id__in=purchased_course_ids)
 
@@ -837,7 +843,7 @@ def _get_owned_subcategory_ids(user):
     if user.is_staff or user.is_superuser:
         return set(SubCategory.objects.values_list('id', flat=True))
     return set(
-        ModulePurchase.objects.filter(user=user).values_list('subcategory_id', flat=True)
+        ModulePurchase.objects.filter(user=user, is_purchased=True).values_list('subcategory_id', flat=True)
     )
 
 
@@ -848,7 +854,11 @@ def _has_module_access(user, subcategory):
         return False
     if user.is_staff or user.is_superuser:
         return True
-    return ModulePurchase.objects.filter(user=user, subcategory=subcategory).exists()
+    return ModulePurchase.objects.filter(
+        user=user,
+        subcategory=subcategory,
+        is_purchased=True,
+    ).exists()
 
 
 def _ensure_staff(request):
