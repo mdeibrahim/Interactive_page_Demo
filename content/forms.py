@@ -161,6 +161,7 @@ class ProfileUpdateForm(forms.Form):
     email = forms.EmailField(required=True)
     full_name = forms.CharField(max_length=160, required=True)
     phone_number = forms.CharField(max_length=20, required=True)
+    profile_picture = forms.ImageField(required=False)
 
     student_institution = forms.CharField(max_length=180, required=False)
     student_level = forms.CharField(max_length=80, required=False, label='Class / Level')
@@ -180,6 +181,7 @@ class ProfileUpdateForm(forms.Form):
                 'email': user.email,
                 'full_name': profile.full_name,
                 'phone_number': profile.phone_number,
+                'profile_picture': profile.profile_picture,
                 'student_institution': profile.student_institution,
                 'student_level': profile.student_level,
                 'teacher_institution': profile.teacher_institution,
@@ -238,6 +240,40 @@ class ProfileUpdateForm(forms.Form):
             if cleaned.get('teacher_experience_years') is None:
                 self.add_error('teacher_experience_years', 'This field is required for teachers.')
         return cleaned
+
+    def save(self):
+        user = self.user
+        profile = self.profile
+
+        user.email = self.cleaned_data['email']
+        user.save(update_fields=['email'])
+
+        profile.full_name = self.cleaned_data['full_name'].strip()
+        profile.phone_number = self.cleaned_data['phone_number']
+
+        uploaded_picture = self.cleaned_data.get('profile_picture')
+        if uploaded_picture:
+            profile.profile_picture = uploaded_picture
+
+        if self.role == UserRole.STUDENT:
+            profile.student_institution = self.cleaned_data['student_institution'].strip()
+            profile.student_level = self.cleaned_data['student_level'].strip()
+            profile.teacher_institution = ''
+            profile.teacher_subject = ''
+            profile.teacher_experience_years = None
+        else:
+            profile.teacher_institution = self.cleaned_data['teacher_institution'].strip()
+            profile.teacher_subject = self.cleaned_data['teacher_subject'].strip()
+            profile.teacher_experience_years = self.cleaned_data['teacher_experience_years']
+            profile.student_institution = ''
+            profile.student_level = ''
+
+        profile.save()
+        return profile
+
+
+class OTPForm(forms.Form):
+    code = forms.CharField(max_length=8, required=True, widget=forms.TextInput(attrs={'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5'}))
 
     def save(self):
         user = self.user

@@ -31,9 +31,15 @@
                     </div>
 
                     <div class="mt-4 flex flex-wrap gap-2">
+                        {% if card.has_access %}
                         <a href="{% url 'content:category_details' card.purchase.subcategory.category.slug card.purchase.subcategory.slug %}" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-                            <i class="fa-solid fa-book-open"></i> Open Course
+                            <i class="fa-solid fa-book-open"></i> শুরু করুন
                         </a>
+                        {% else %}
+                        <a href="{% url 'content:start_purchase' card.purchase.subcategory.category.slug card.purchase.subcategory.slug %}" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                            <i class="fa-solid fa-credit-card"></i> এখনই কিনুন
+                        </a>
+                        {% endif %}
                         {% if card.is_completed %}
                         <form method="post" action="{% url 'content:claim_certificate' card.purchase.subcategory.id %}">
                             {% csrf_token %}
@@ -69,8 +75,8 @@
                     <p class="mt-2 text-sm text-slate-600">{{ course.description|default:'No description available.'|truncatechars:90 }}</p>
                     <div class="mt-3 flex items-center justify-between">
                         <span class="font-bold text-slate-900">৳{{ course.price }}</span>
-                        <a href="{% url 'content:category_details' course.category.slug course.slug %}" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-                            View Details <i class="fa-solid fa-arrow-right"></i>
+                        <a href="{% url 'content:start_purchase' course.category.slug course.slug %}" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                            এখনই কিনুন <i class="fa-solid fa-arrow-right"></i>
                         </a>
                     </div>
                 </article>

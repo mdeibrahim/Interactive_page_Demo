@@ -13,6 +13,7 @@ class UserRole(models.TextChoices):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=20, choices=UserRole.choices, default=UserRole.STUDENT)
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     full_name = models.CharField(max_length=160, blank=True, default='')
     phone_number = models.CharField(max_length=20, blank=True, default='')
     student_institution = models.CharField(max_length=180, blank=True, default='')
@@ -28,6 +29,21 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} ({self.role})"
+
+
+class EmailOTP(models.Model):
+    """One-time code for email verification after signup."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_otps')
+    code = models.CharField(max_length=8)
+    is_used = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"OTP for {self.user.email} — {self.code}"
 
 
 class StudentDeviceSession(models.Model):
@@ -80,6 +96,25 @@ class SubCategory(models.Model):
     @property
     def is_free(self):
         return self.price <= 0
+
+
+class Module(models.Model):
+    """A logical module inside a SubCategory/Course. A course can have many modules."""
+    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='modules')
+    title = models.CharField(max_length=255)
+    slug = models.SlugField()
+    description = models.TextField(blank=True)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Module'
+        verbose_name_plural = 'Modules'
+        unique_together = ('subcategory', 'slug')
+        ordering = ['order', 'title']
+
+    def __str__(self):
+        return f"{self.subcategory.name} → {self.title}"
 
 
 class Subject(models.Model):
@@ -197,6 +232,7 @@ class InteractiveContent(models.Model):
 class ModulePurchase(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='module_purchases')
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='purchases')
+    is_purchased = models.BooleanField(default=False)
     purchased_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -208,7 +244,8 @@ class ModulePurchase(models.Model):
 
 
 class CourseVideo(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='course_videos')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='course_videos', blank=True, null=True)
+    module = models.ForeignKey('Module', on_delete=models.CASCADE, related_name='course_videos', blank=True, null=True)
     title = models.CharField(max_length=255)
     video_url = models.URLField()
     order = models.PositiveIntegerField(default=0)
@@ -222,7 +259,8 @@ class CourseVideo(models.Model):
 
 
 class CourseQuiz(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='course_quizzes')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='course_quizzes', blank=True, null=True)
+    module = models.ForeignKey('Module', on_delete=models.CASCADE, related_name='course_quizzes', blank=True, null=True)
     title = models.CharField(max_length=255)
     pass_score = models.PositiveSmallIntegerField(default=50)
     is_active = models.BooleanField(default=True)

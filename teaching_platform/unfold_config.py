@@ -43,14 +43,51 @@ UNFOLD = {
                         "link": reverse_lazy("admin:content_subject_changelist"),
                     },
                     {
-                        "title": "Accordion Sections",
-                        "icon": "view_agenda",
-                        "link": reverse_lazy("admin:content_accordionsection_changelist"),
-                    },
-                    {
                         "title": "Interactive Contents",
                         "icon": "interactive_space",
                         "link": reverse_lazy("admin:content_interactivecontent_changelist"),
+                    },
+                    {
+                        "title": "Course Videos",
+                        "icon": "video_library",
+                        "link": reverse_lazy("admin:content_coursevideo_changelist"),
+                    },
+                    {
+                        "title": "Quizzes",
+                        "icon": "quiz",
+                        "link": reverse_lazy("admin:content_coursequiz_changelist"),
+                    },
+                    {
+                        "title": "Quiz Attempts",
+                        "icon": "fact_check",
+                        "link": reverse_lazy("admin:content_quizattempt_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": "Platform",
+                "separator": True,
+                "collapsible": False,
+                "items": [
+                    {
+                        "title": "Purchases",
+                        "icon": "shopping_cart",
+                        "link": reverse_lazy("admin:content_modulepurchase_changelist"),
+                    },
+                    {
+                        "title": "Course Change Requests",
+                        "icon": "edit_calendar",
+                        "link": reverse_lazy("admin:content_coursechangerequest_changelist"),
+                    },
+                    {
+                        "title": "Certificates",
+                        "icon": "verified",
+                        "link": reverse_lazy("admin:content_coursecertificate_changelist"),
+                    },
+                    {
+                        "title": "Subject Progress",
+                        "icon": "trending_up",
+                        "link": reverse_lazy("admin:content_subjectprogress_changelist"),
                     },
                 ],
             },
@@ -65,9 +102,19 @@ UNFOLD = {
                         "link": reverse_lazy("admin:auth_user_changelist"),
                     },
                     {
+                        "title": "User Profiles",
+                        "icon": "badge",
+                        "link": reverse_lazy("admin:content_userprofile_changelist"),
+                    },
+                    {
                         "title": "Groups",
                         "icon": "groups",
                         "link": reverse_lazy("admin:auth_group_changelist"),
+                    },
+                    {
+                        "title": "Device Sessions",
+                        "icon": "devices",
+                        "link": reverse_lazy("admin:content_studentdevicesession_changelist"),
                     },
                 ],
             },

@@ -11,6 +11,24 @@ urlpatterns = [
     path('accounts/signup/', views.signup_selector, name='signup'),
     path('accounts/login/student/', views.student_login, name='student_login'),
     path('accounts/login/teacher/', views.teacher_login, name='teacher_login'),
+    path('accounts/otp-verify/', views.otp_verify, name='otp_verify'),
+    path('accounts/otp-resend/', views.otp_resend, name='otp_resend'),
+    # Password reset (using Django auth views)
+    path('accounts/password-reset/', auth_views.PasswordResetView.as_view(
+        template_name='registration/password_reset_form.html',
+        email_template_name='registration/password_reset_email.html',
+        success_url='/accounts/password-reset/done/'
+    ), name='password_reset'),
+    path('accounts/password-reset/done/', auth_views.PasswordResetDoneView.as_view(
+        template_name='registration/password_reset_done.html'
+    ), name='password_reset_done'),
+    path('accounts/password-reset-confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
+        template_name='registration/password_reset_confirm.html',
+        success_url='/accounts/password-reset/complete/'
+    ), name='password_reset_confirm'),
+    path('accounts/password-reset/complete/', auth_views.PasswordResetCompleteView.as_view(
+        template_name='registration/password_reset_complete.html'
+    ), name='password_reset_complete'),
     path('accounts/signup/student/', views.student_signup, name='student_signup'),
     path('accounts/signup/teacher/', views.teacher_signup, name='teacher_signup'),
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
@@ -18,6 +36,7 @@ urlpatterns = [
     path('dashboard/student/', views.student_dashboard, name='student_dashboard'),
     path('dashboard/teacher/', views.teacher_dashboard, name='teacher_dashboard'),
     path('dashboard/teacher/course/new-request/', views.submit_new_course_request, name='submit_new_course_request'),
+    path('dashboard/teacher/course/new/', views.add_course_request, name='add_course_request'),
     path('dashboard/teacher/course/<int:course_id>/', views.teacher_course_detail, name='teacher_course_detail'),
     path('dashboard/teacher/course/<int:course_id>/change-request/', views.submit_course_change_request, name='submit_course_change_request'),
     path('dashboard/course/<int:course_id>/claim-certificate/', views.claim_certificate, name='claim_certificate'),
@@ -28,6 +47,8 @@ urlpatterns = [
     path('category/<slug:cat_slug>/details/<slug:subcat_slug>/', views.subcategory_detail, name='category_details'),
     path('category/<slug:cat_slug>/<slug:subcat_slug>/', views.subcategory_detail, name='subcategory_detail'),
     path('category/<slug:cat_slug>/<slug:subcat_slug>/buy/', views.buy_module, name='buy_module'),
+    path('category/<slug:cat_slug>/<slug:subcat_slug>/start-purchase/', views.start_purchase, name='start_purchase'),
+    path('category/<slug:cat_slug>/<slug:subcat_slug>/purchase/', views.course_purchase, name='course_purchase'),
     path('category/<slug:cat_slug>/<slug:subcat_slug>/<slug:subject_slug>/', views.subject_detail, name='subject_detail'),
 
     # ── Frontend editor ─────────────────────────────────────────

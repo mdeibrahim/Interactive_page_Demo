@@ -17,6 +17,7 @@ from .models import (
     AccordionSection,
     InteractiveContent,
     ModulePurchase,
+    Module,
     UserProfile,
     StudentDeviceSession,
 )
@@ -28,6 +29,15 @@ class SubCategoryInline(TabularInline):
     show_change_link = True
     prepopulated_fields = {'slug': ('name',)}
     fields = ('name', 'slug', 'teacher', 'price', 'description')
+
+
+
+class ModuleInline(TabularInline):
+    model = Module
+    extra = 0
+    show_change_link = True
+    prepopulated_fields = {'slug': ('title',)}
+    fields = ('title', 'slug', 'order', 'description')
 
 
 @admin.register(Category)
@@ -61,11 +71,15 @@ class SubCategoryAdmin(ModelAdmin):
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        return queryset.select_related('category').prefetch_related('subjects')
+        return queryset.select_related('category').prefetch_related('subjects', 'modules')
 
     def subject_count(self, obj):
         return obj.subjects.count()
     subject_count.short_description = 'Subjects'
+
+    def module_count(self, obj):
+        return obj.modules.count()
+    module_count.short_description = 'Modules'
 
     def purchase_count(self, obj):
         return obj.purchases.count()
@@ -207,6 +221,18 @@ class InteractiveContentAdmin(ModelAdmin):
     preview.short_description = 'Preview'
 
 
+@admin.register(Module)
+class ModuleAdmin(ModelAdmin):
+    list_display = ('title', 'subcategory', 'order', 'created_at')
+    list_select_related = ('subcategory', 'subcategory__category')
+    date_hierarchy = 'created_at'
+    list_per_page = 25
+    prepopulated_fields = {'slug': ('title',)}
+    list_filter = ('subcategory__category', 'subcategory')
+    search_fields = ('title', 'slug', 'subcategory__name')
+    autocomplete_fields = ('subcategory',)
+
+
 @admin.register(ModulePurchase)
 class ModulePurchaseAdmin(ModelAdmin):
     list_display = ('id', 'user', 'subcategory', 'module_price', 'purchased_at')
@@ -230,7 +256,7 @@ class UserProfileAdmin(ModelAdmin):
     autocomplete_fields = ('user',)
     list_per_page = 30
     fieldsets = (
-        ('Account', {'fields': ('user', 'role', 'full_name', 'phone_number')}),
+        ('Account', {'fields': ('user', 'role', 'profile_picture', 'full_name', 'phone_number')}),
         ('Student Fields', {'fields': ('student_institution', 'student_level')}),
         ('Teacher Fields', {'fields': ('teacher_institution', 'teacher_subject', 'teacher_experience_years')}),
         ('Audit', {'fields': ('created_at', 'updated_at')}),
@@ -249,10 +275,10 @@ class StudentDeviceSessionAdmin(ModelAdmin):
 
 @admin.register(CourseVideo)
 class CourseVideoAdmin(ModelAdmin):
-    list_display = ('title', 'subject', 'order', 'created_at')
-    list_filter = ('created_at', 'subject__subcategory__category')
-    search_fields = ('title', 'subject__title', 'subject__subcategory__name')
-    autocomplete_fields = ('subject',)
+    list_display = ('title', 'subject', 'module', 'order', 'created_at')
+    list_filter = ('created_at', 'subject__subcategory__category', 'module__subcategory__category')
+    search_fields = ('title', 'subject__title', 'subject__subcategory__name', 'module__title')
+    autocomplete_fields = ('subject', 'module')
 
 
 class CourseQuizQuestionInline(TabularInline):
@@ -262,10 +288,10 @@ class CourseQuizQuestionInline(TabularInline):
 
 @admin.register(CourseQuiz)
 class CourseQuizAdmin(ModelAdmin):
-    list_display = ('title', 'subject', 'pass_score', 'is_active', 'created_at')
-    list_filter = ('is_active', 'created_at', 'subject__subcategory__category')
-    search_fields = ('title', 'subject__title')
-    autocomplete_fields = ('subject',)
+    list_display = ('title', 'subject', 'module', 'pass_score', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at', 'subject__subcategory__category', 'module__subcategory__category')
+    search_fields = ('title', 'subject__title', 'module__title')
+    autocomplete_fields = ('subject', 'module')
     inlines = [CourseQuizQuestionInline]
 
 
