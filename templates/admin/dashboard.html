@@ -363,9 +363,17 @@
             </div>
             <nav>
                 <ul class="sidebar-list">
-                    <li><a href="{% url 'admin:content_category_changelist' %}">Categories <span class="badge">{{ stats.categories_count }}</span></a></li>
-                    <li><a href="{% url 'admin:content_course_changelist' %}">Courses <span class="badge">{{ stats.courses_count }}</span></a></li>
-                    <li><a href="{% url 'admin:content_module_changelist' %}">Modules <span class="badge">{{ stats.modules_count }}</span></a></li>
+                    {% for m in admin_models %}
+                    <li>
+                        {% if m.url %}
+                        <a href="{{ m.url }}">{{ m.label }} <span class="badge">{% if m.count is not None %}{{ m.count }}{% else %}-{% endif %}</span></a>
+                        {% else %}
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-radius:8px;color:var(--text-1)">{{ m.label }} <span class="badge">{% if m.count is not None %}{{ m.count }}{% else %}-{% endif %}</span></div>
+                        {% endif %}
+                    </li>
+                    {% empty %}
+                    <li><span class="muted">No admin-managed models found.</span></li>
+                    {% endfor %}
                 </ul>
             </nav>
         </aside>
@@ -383,14 +391,14 @@
 
     <div class="kpi-grid">
         <article class="kpi-card">
-            <p class="kpi-label">Categories</p>
-            <p class="kpi-value">{{ stats.categories_count }}</p>
-            <p class="kpi-footnote">{{ health.categories_without_courses }} empty</p>
-        </article>
-        <article class="kpi-card">
-            <p class="kpi-label">Sub Categories</p>
+            <p class="kpi-label">Courses</p>
             <p class="kpi-value">{{ stats.courses_count }}</p>
             <p class="kpi-footnote">{{ health.courses_without_modules }} without modules</p>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-label">Modules</p>
+            <p class="kpi-value">{{ stats.modules_count }}</p>
+            <p class="kpi-footnote">course structure units</p>
         </article>
         <article class="kpi-card">
             <p class="kpi-label">Modules</p>
@@ -409,28 +417,17 @@
             <h2>Content Health</h2>
             <div class="health-row">
                 <label>
-                    <span>Categories missing courses</span>
-                    <span>{{ health.categories_without_courses }}</span>
-                </label>
-                <div class="meter"><span style="width: {% if health.categories_without_courses %}35%{% else %}100%{% endif %};"></span></div>
-            </div>
-            <div class="health-row">
-                <label>
-                    <span>courses missing modules</span>
+                    <span>Courses missing modules</span>
                     <span>{{ health.courses_without_modules }}</span>
                 </label>
                 <div class="meter"><span style="width: {% if health.courses_without_modules %}35%{% else %}100%{% endif %};"></span></div>
             </div>
-            <p class="muted">Track structural completeness across categories, courses, and modules.</p>
+            <p class="muted">Track structural completeness across courses and modules.</p>
         </section>
 
         <section class="panel">
             <h2>Actionable Gaps</h2>
             <ul class="warning-list">
-                <li class="warning-item">
-                    <span>Categories without courses</span>
-                    <strong>{{ health.categories_without_courses }}</strong>
-                </li>
                 <li class="warning-item">
                     <span>courses without modules</span>
                     <strong>{{ health.courses_without_modules }}</strong>
@@ -440,31 +437,7 @@
     </div>
 
     <div class="split-grid">
-        <section class="panel">
-            <h2>Category Load</h2>
-            <div class="table-wrap">
-                <table class="dashboard-table">
-                    <thead>
-                        <tr>
-                            <th>Category</th>
-                            <th>Modules</th>
-                            <th>Go</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for cat in categories_with_counts %}
-                        <tr>
-                            <td>{{ cat.name }}</td>
-                            <td><span class="badge badge-brand">{{ cat.module_count }}</span></td>
-                            <td><a class="edit-link" href="{% url 'admin:content_category_change' cat.id %}">Edit</a></td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="3" class="empty">No categories available yet.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        
 
         <section class="panel">
             <h2>Recently Added Modules</h2>
@@ -473,7 +446,7 @@
                     <thead>
                         <tr>
                             <th>Title</th>
-                            <th>Category</th>
+                            <th>Course</th>
                             <th>Created</th>
                             <th>Go</th>
                         </tr>
@@ -482,7 +455,7 @@
                         {% for module in latest_modules %}
                         <tr>
                             <td>{{ module.title }}</td>
-                            <td>{{ module.course.category.name }}</td>
+                            <td>{{ module.course.name }}</td>
                             <td>{{ module.created_at|date:"d M Y, H:i" }}</td>
                             <td><a class="edit-link" href="{% url 'admin:content_module_change' module.id %}">Edit</a></td>
                         </tr>

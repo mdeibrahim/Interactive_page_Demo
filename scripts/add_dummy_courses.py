@@ -1,7 +1,4 @@
-from content.models import Category, Course, Module, CourseVideo
-
-cat_slug = 'dummy-category'
-cat, created = Category.objects.get_or_create(name='Dummy Category', slug=cat_slug)
+from content.models import Course, Module, Coursecontent
 
 courses = [
     {"name":"Dummy Course Alpha", "slug":"dummy-course-alpha", "price":150, "desc":"Alpha dummy course"},
@@ -10,18 +7,18 @@ courses = [
 ]
 
 for c in courses:
-    sc, created = Course.objects.get_or_create(category=cat, slug=c["slug"], defaults={"name":c["name"], "description":c["desc"], "price":c["price"]})
+    sc, created = Course.objects.get_or_create(slug=c["slug"], defaults={"name":c["name"], "description":c["desc"], "price":c["price"]})
     sc.name = c["name"]
     sc.description = c["desc"]
     sc.price = c["price"]
     sc.save()
 
-    module, mcreated = Module.objects.get_or_create(subcategory=sc, slug='module-1', defaults={"title":"Module 1", "description":"Module 1 for "+c["name"], "order":1})
+    module, mcreated = Module.objects.get_or_create(course=sc, slug='module-1', defaults={"title":"Module 1", "description":"Module 1 for "+c["name"], "order":1})
     module.title = "Module 1"
     module.description = "Module 1 for " + c["name"]
     module.save()
 
-    video, vcreated = CourseVideo.objects.get_or_create(module=module, title='Intro Video', defaults={"video_url":"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", "duration_seconds":300, "order":1})
+    video, vcreated = Coursecontent.objects.get_or_create(module=module, title='Intro Video', defaults={"video_url":"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", "duration_seconds":300, "order":1})
     video.duration_seconds = 300
     video.order = 1
     video.save()

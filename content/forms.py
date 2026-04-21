@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 import re
 
-from .models import Category, CourseChangeRequest, UserProfile, UserRole
+from .models import CourseChangeRequest, UserProfile, UserRole
 
 User = get_user_model()
 
@@ -133,11 +133,10 @@ class CourseChangeRequestForm(forms.ModelForm):
 
 
 class NewCourseAddRequestForm(forms.Form):
-    requested_category = forms.ModelChoiceField(
-        queryset=Category.objects.all(),
+    requested_category = forms.CharField(
+        max_length=255,
         required=True,
-        empty_label='Select category',
-        widget=forms.Select(attrs={'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5'}),
+        widget=forms.TextInput(attrs={'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5', 'placeholder': 'Category name'}),
     )
     requested_course_name = forms.CharField(
         max_length=255,

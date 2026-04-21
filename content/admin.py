@@ -6,9 +6,9 @@ from .models import (
     CourseChangeRequest,
     CourseQuiz,
     CourseQuizQuestion,
-    CourseVideo,
-    Category,
+    CourseContent,
     Course,
+    PaymentInstruction,
     QuizAttempt,
     ModulePurchase,
     Module, UserProfile,
@@ -24,29 +24,13 @@ class CourseInline(TabularInline):
     fields = ('name', 'slug', 'teacher', 'price', 'description')
 
 
-@admin.register(Category)
-class CategoryAdmin(ModelAdmin):
-    list_display = ('name', 'slug', 'course_count', 'created_at')
-    list_filter = ('created_at',)
-    date_hierarchy = 'created_at'
-    list_per_page = 25
-    prepopulated_fields = {'slug': ('name',)}
-    search_fields = ('name', 'slug', 'description')
-    inlines = [CourseInline]
-
-    def get_queryset(self, request):
-        queryset = super().get_queryset(request)
-        return queryset.prefetch_related('courses')
-
-    def course_count(self, obj):
-        return obj.courses.count()
-    course_count.short_description = 'Courses'
+# Category admin removed — categories removed from models
 
 @admin.register(Course)
 class CourseAdmin(ModelAdmin):
-    list_display = ('name', 'category', 'teacher', 'price', 'created_at')
-    list_filter = ('category', 'teacher', 'created_at')
-    search_fields = ('name', 'slug', 'teacher__username', 'category__name')
+    list_display = ('name', 'teacher', 'price', 'created_at')
+    list_filter = ('teacher', 'created_at')
+    search_fields = ('name', 'slug', 'teacher__username')
     autocomplete_fields = ('teacher',)
     prepopulated_fields = {'slug': ('name',)}
     date_hierarchy = 'created_at'
@@ -96,8 +80,8 @@ class StudentDeviceSessionAdmin(ModelAdmin):
     list_per_page = 50
 
 
-@admin.register(CourseVideo)
-class CourseVideoAdmin(ModelAdmin):
+@admin.register(CourseContent)
+class CourseContentAdmin(ModelAdmin):
     list_display = ('title', 'module', 'order', 'created_at')
     list_filter = ('created_at', 'module__course')
     search_fields = ('title', 'module__title', 'module__course__name')
@@ -154,6 +138,17 @@ class CourseChangeRequestAdmin(ModelAdmin):
     course_or_requested_name.short_description = 'Course'
 
 
+@admin.register(Module)
+class ModuleAdmin(ModelAdmin):
+    list_display = ('title', 'course')
+    search_fields = ('title',)
+
+
+@admin.register(PaymentInstruction)
+class PaymentInstructionAdmin(ModelAdmin):
+    list_display = ('id','payment_method_name',  'created_at')
+    search_fields = ('payment_method_name',)
+
 # Customize admin site
 admin.site.site_header = "Interactive Teaching Platform"
 admin.site.site_title = "Teaching Platform Admin"
@@ -162,7 +157,3 @@ admin.site.index_title = "Content Management"
 
 
 
-@admin.register(Module)
-class ModuleAdmin(ModelAdmin):
-    list_display = ('title', 'course')
-    search_fields = ('title',)

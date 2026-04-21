@@ -62,35 +62,20 @@ class StudentDeviceSession(models.Model):
         return f"{self.user.username} device session ({self.jti})"
 
 
-class Category(models.Model):
-    name = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True)
-    description = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name_plural = "Categories"
-        ordering = ['name']
-
-    def __str__(self):
-        return self.name
-
-
 class Course(models.Model):
-    category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='courses')
     teacher = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='teaching_courses', blank=True, null=True)
     name = models.CharField(max_length=255)
-    slug = models.SlugField()
+    slug = models.SlugField(unique=True)
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['name']
-        unique_together = ('category', 'slug')
+        
 
     def __str__(self):
-        return f"{self.category.name} - {self.name}"
+        return self.name
 
     @property
     def is_free(self):
@@ -116,14 +101,19 @@ class Module(models.Model):
         return f"{self.course.name} → {self.title}"
 
 
-# NOTE: The legacy `Subject` model and its accordion/progress helpers
-# have been removed. Content is now organized around `Module`/`Course`.
-
-
+PAYMENT_METHOD_CHOICES = [
+    ('bkash', 'Bkash'),
+    ('nagad', 'Nagad'),
+    ('rocket', 'Rocket'),
+    ('card', 'Credit/Debit Card'),
+    ('other', 'Other'),
+]
 
 class ModulePurchase(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='module_purchases')
     course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='purchases')
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='other', blank=True, null=True)
+    transaction_id = models.CharField(max_length=255, blank=True, null=True)
     is_purchased = models.BooleanField(default=False)
     purchased_at = models.DateTimeField(auto_now_add=True)
 
@@ -135,13 +125,70 @@ class ModulePurchase(models.Model):
         return f"{self.user} purchased {self.course.name}"
 
 
-class CourseVideo(models.Model):
-    module = models.ForeignKey('Module', on_delete=models.CASCADE, related_name='course_videos', blank=True, null=True)
+class CourseContent(models.Model):
+    module = models.ForeignKey('Module', on_delete=models.CASCADE, related_name='course_contents', blank=True, null=True)
     title = models.CharField(max_length=255)
-    video_url = models.URLField()
-    duration_seconds = models.PositiveIntegerField(default=0)
-    order = models.PositiveIntegerField(default=0)
+    video_url = models.URLField(null=True, blank=True)
+    duration_seconds = models.PositiveIntegerField(null=True, blank=True, default=0)
+    order = models.PositiveIntegerField(default=0,null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # Text content
+    text_content = models.TextField(blank=True, help_text="For 'text' type — can include HTML with bold/italic/underline")
+
+    # Media files
+    image = models.ImageField(upload_to='interactive/images/', blank=True, null=True)
+    audio = models.FileField(upload_to='interactive/audio/', blank=True, null=True)
+    video = models.FileField(upload_to='interactive/videos/', blank=True, null=True)
+
+    # YouTube
+    youtube_url = models.URLField(blank=True, help_text="Full YouTube URL e.g. https://www.youtube.com/watch?v=...")
+
+    def __str__(self):
+        return f"[{self.get_content_type_display()}] {self.title}"
+
+    def get_youtube_embed_url(self):
+        """Convert a YouTube URL (watch/shorts/youtu.be/embed) to embed URL."""
+        from urllib.parse import urlparse, parse_qs
+        import re
+
+        if not self.youtube_url:
+            return ''
+
+        raw_url = self.youtube_url.strip()
+        video_id = None
+
+        try:
+            parsed = urlparse(raw_url)
+            host = (parsed.netloc or '').lower().replace('www.', '')
+
+            # https://youtube.com/watch?v=VIDEO_ID
+            if host in ('youtube.com', 'm.youtube.com'):
+                if parsed.path == '/watch':
+                    video_id = (parse_qs(parsed.query).get('v') or [None])[0]
+                elif parsed.path.startswith('/shorts/'):
+                    video_id = parsed.path.split('/shorts/', 1)[1].split('/', 1)[0]
+                elif parsed.path.startswith('/live/'):
+                    video_id = parsed.path.split('/live/', 1)[1].split('/', 1)[0]
+                elif parsed.path.startswith('/embed/'):
+                    video_id = parsed.path.split('/embed/', 1)[1].split('/', 1)[0]
+
+            # https://youtu.be/VIDEO_ID
+            elif host == 'youtu.be':
+                video_id = parsed.path.lstrip('/').split('/', 1)[0]
+        except Exception:
+            video_id = None
+
+        # Fallback regex (supports pasted text/HTML containing a YouTube id)
+        if not video_id:
+            match = re.search(r'(?:v=|youtu\.be/|/embed/|/shorts/|/live/)([a-zA-Z0-9_-]{11})', raw_url)
+            if match:
+                video_id = match.group(1)
+
+        if video_id and re.fullmatch(r'[a-zA-Z0-9_-]{11}', video_id):
+            return f"https://www.youtube.com/embed/{video_id}"
+
+        return ''
 
     class Meta:
         ordering = ['order', 'created_at']
@@ -219,8 +266,6 @@ class QuizAttempt(models.Model):
         return f"{self.user.username} - {self.quiz.title} ({self.score}%)"
 
 
-# `SubjectProgress` removed along with `Subject` model; progress tracking
-# should be migrated to `Module`-level if needed in future work.
 
 
 class CourseCertificate(models.Model):
@@ -247,7 +292,8 @@ class CourseChangeRequest(models.Model):
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_change_requests')
     course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='change_requests', blank=True, null=True)
     course_new = models.ForeignKey('Course', on_delete=models.SET_NULL, related_name='change_requests_new', blank=True, null=True)
-    requested_category = models.ForeignKey(Category, on_delete=models.SET_NULL, related_name='course_add_requests', blank=True, null=True)
+    # requested_category previously FK -> Category; store free-text name now
+    requested_category = models.CharField(max_length=255, blank=True, null=True)
     requested_course_name = models.CharField(max_length=255, blank=True, default='')
     requested_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     request_type = models.CharField(max_length=20, choices=[('add', 'Add'), ('update', 'Update'), ('remove', 'Remove')])
@@ -264,6 +310,13 @@ class CourseChangeRequest(models.Model):
 
     def __str__(self):
         return f"{self.course.name} - {self.request_type} ({self.status})"
+    
+
+class PaymentInstruction(models.Model):
+    payment_method_name = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='other', blank=True, null=True)
+    details = models.TextField(blank=True, default='')
+    image = models.ImageField(upload_to='payment_instructions/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 

@@ -1,9 +1,8 @@
 from django.core.management.base import BaseCommand
 from content.models import (
-    Category,
     Course,
     Module,
-    CourseVideo,
+    Coursecontent,
     CourseQuiz,
     CourseQuizQuestion,
 )
@@ -15,18 +14,8 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         self.stdout.write(self.style.MIGRATE_HEADING('Seeding demo data...'))
 
-        # ── Category ──
-        cat, _ = Category.objects.get_or_create(
-            slug='journalism',
-            defaults={
-                'name': 'Journalism',
-                'description': 'News reporting, investigative journalism, and media studies.',
-            }
-        )
-
         # ── course ──
         course, _ = Course.objects.get_or_create(
-            category=cat,
             slug='crime-reporting',
             defaults={'name': 'Crime Reporting', 'description': 'Covering criminal investigations and court proceedings.'}
         )
@@ -47,11 +36,11 @@ class Command(BaseCommand):
         )
 
         # Videos for module 1
-        CourseVideo.objects.get_or_create(module=mod1, title='Overview of the Case', defaults={'video_url': ''})
-        CourseVideo.objects.get_or_create(module=mod1, title='Timeline & Key Events', defaults={'video_url': ''})
+        Coursecontent.objects.get_or_create(module=mod1, title='Overview of the Case', defaults={'video_url': ''})
+        Coursecontent.objects.get_or_create(module=mod1, title='Timeline & Key Events', defaults={'video_url': ''})
 
         # Videos for module 2
-        CourseVideo.objects.get_or_create(module=mod2, title='CCTV Footage Breakdown', defaults={'video_url': ''})
+        Coursecontent.objects.get_or_create(module=mod2, title='CCTV Footage Breakdown', defaults={'video_url': ''})
 
         # Quizzes
         q1, _ = CourseQuiz.objects.get_or_create(module=mod1, title='Introduction Quiz', defaults={'pass_score': 50, 'is_active': True})
@@ -69,7 +58,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f'\nSUCCESS: Demo data seeded successfully!\n'
-            f'   Category: {cat.name}\n'
+            f'   course: {course.name}\n'
             f'   course: {course.name}\n'
             f'   Module 1: {mod1.title}\n'
             f'   Module 2: {mod2.title}\n\n'

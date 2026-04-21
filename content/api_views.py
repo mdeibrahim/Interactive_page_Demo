@@ -2,7 +2,7 @@ from datetime import datetime, timezone as dt_timezone
 
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
-from django.db.models import OuterRef, Subquery
+ 
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -15,13 +15,11 @@ from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, Bl
 
 from .api_permissions import IsTeacher, IsStudent
 from .api_serializers import (
-    CategorySummarySerializer,
     DetailSummarySerializer,
     UserRegisterSerializer,
     UserSummarySerializer,
 )
 from .models import (
-    Category,
     ModulePurchase,
     StudentDeviceSession,
     Course,
@@ -216,42 +214,14 @@ class MeAPIView(APIView):
         return Response(UserSummarySerializer(request.user).data)
 
 
-class CategoryListAPIView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        default_detail_slug_sq = Course.objects.filter(category=OuterRef('pk')).order_by('name').values('slug')[:1]
-        categories = Category.objects.annotate(
-            default_detail_slug=Subquery(default_detail_slug_sq)
-        ).prefetch_related('courses').all()
-        return Response(CategorySummarySerializer(categories, many=True).data)
-
-
-class CategoryDetailsListAPIView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request, cat_slug):
-        category = Category.objects.filter(slug=cat_slug).first()
-        if not category:
-            return Response({'detail': 'Category not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        details = category.courses.prefetch_related('modules').all()
-        payload = {
-            'category': CategorySummarySerializer(category).data,
-            'details': DetailSummarySerializer(details, many=True).data,
-        }
-        return Response(payload)
+# Category APIs removed — focus on course-centric endpoints
 
 
 class DetailRetrieveAPIView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request, cat_slug, course_slug):
-        category = Category.objects.filter(slug=cat_slug).first()
-        if not category:
-            return Response({'detail': 'Category not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        detail = Course.objects.filter(category=category, slug=course_slug).first()
+    def get(self, request, course_slug):
+        detail = Course.objects.filter(slug=course_slug).prefetch_related('modules').first()
         if not detail:
             return Response({'detail': 'Details not found.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -259,7 +229,6 @@ class DetailRetrieveAPIView(APIView):
 
         return Response(
             {
-                'category': CategorySummarySerializer(category).data,
                 'detail': DetailSummarySerializer(detail).data,
                 'has_access': has_access,
             }
@@ -269,12 +238,8 @@ class DetailRetrieveAPIView(APIView):
 class BuyDetailAPIView(APIView):
     permission_classes = [IsAuthenticated, IsStudent]
 
-    def post(self, request, cat_slug, course_slug):
-        category = Category.objects.filter(slug=cat_slug).first()
-        if not category:
-            return Response({'detail': 'Category not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        detail = Course.objects.filter(category=category, slug=course_slug).first()
+    def post(self, request, course_slug):
+        detail = Course.objects.filter(slug=course_slug).first()
         if not detail:
             return Response({'detail': 'Details not found.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -287,7 +252,6 @@ class BuyDetailAPIView(APIView):
             {
                 'message': 'Access granted.',
                 'detail_slug': detail.slug,
-                'category_slug': category.slug,
             },
             status=status.HTTP_200_OK,
         )
@@ -300,12 +264,10 @@ class MyModulesAPIView(APIView):
         purchases = ModulePurchase.objects.filter(
             user=request.user,
             is_purchased=True,
-        ).select_related('course', 'course__category')
+        ).select_related('course')
         data = [
             {
                 'id': p.id,
-                'category': p.course.category.name,
-                'category_slug': p.course.category.slug,
                 'detail_name': p.course.name,
                 'detail_slug': p.course.slug,
                 'price': p.course.price,

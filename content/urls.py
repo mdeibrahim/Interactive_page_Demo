@@ -42,13 +42,13 @@ urlpatterns = [
     path('dashboard/course/<int:course_id>/claim-certificate/', views.claim_certificate, name='claim_certificate'),
     path('my-courses/', views.my_modules, name='my_courses'),
     path('my-modules/', views.my_modules, name='my_modules'),
-    path('category/<slug:cat_slug>/', views.category_detail, name='category_detail'),
-    path('category/<slug:cat_slug>/details/<slug:course_slug>/', views.course_detail, name='category_details'),
-    path('category/<slug:cat_slug>/<slug:course_slug>/', views.course_detail, name='course_detail'),
-    path('category/<slug:cat_slug>/<slug:course_slug>/module/<slug:module_slug>/video/<int:video_id>/', views.play_video, name='play_video'),
-    path('category/<slug:cat_slug>/<slug:course_slug>/buy/', views.buy_module, name='buy_module'),
-    path('category/<slug:cat_slug>/<slug:course_slug>/start-purchase/', views.start_purchase, name='start_purchase'),
-    path('category/<slug:cat_slug>/<slug:course_slug>/purchase/', views.course_purchase, name='course_purchase'),
+    # Course-centric routes (category removed)
+    path('courses/<slug:course_slug>/', views.course_detail, name='course_detail'),
+    path('courses/<slug:course_slug>/details/', views.course_detail, name='course_details'),
+    path('courses/<slug:course_slug>/module/<slug:module_slug>/video/<int:video_id>/', views.play_video, name='play_video'),
+    path('courses/<slug:course_slug>/buy/', views.buy_module, name='buy_module'),
+    path('courses/<slug:course_slug>/start-purchase/', views.start_purchase, name='start_purchase'),
+    path('courses/<slug:course_slug>/purchase/', views.course_purchase, name='course_purchase'),
 
     # ── Read API ────────────────────────────────────────────────
     path('api/v1/', include('content.api_urls')),

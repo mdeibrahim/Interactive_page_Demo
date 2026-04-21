@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import Category, Course, UserProfile, UserRole
+from .models import Course, UserProfile, UserRole
 
 
 User = get_user_model()
@@ -126,10 +126,4 @@ class DetailSummarySerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'slug', 'description', 'price', 'is_free', 'module_count', 'created_at')
 
 
-class CategorySummarySerializer(serializers.ModelSerializer):
-    detail_count = serializers.IntegerField(source='courses.count', read_only=True)
-    default_detail_slug = serializers.CharField(read_only=True)
-
-    class Meta:
-        model = Category
-        fields = ('id', 'name', 'slug', 'description', 'detail_count', 'default_detail_slug', 'created_at')
+# Categories removed — API surface now focuses on courses

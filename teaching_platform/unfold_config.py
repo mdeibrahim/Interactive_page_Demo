@@ -27,11 +27,7 @@ UNFOLD = {
                 "separator": True,
                 "collapsible": False,
                 "items": [
-                    {
-                        "title": "Categories",
-                        "icon": "category",
-                        "link": reverse_lazy("admin:content_category_changelist"),
-                    },
+                    
                     {
                         "title": "Courses",
                         "icon": "account_tree",
@@ -43,9 +39,9 @@ UNFOLD = {
                         "link": reverse_lazy("admin:content_module_changelist"),
                     },
                     {
-                        "title": "Course Videos",
+                        "title": "Course Content",
                         "icon": "video_library",
-                        "link": reverse_lazy("admin:content_coursevideo_changelist"),
+                        "link": reverse_lazy("admin:content_coursecontent_changelist"),
                     },
                     {
                         "title": "Quizzes",
@@ -105,6 +101,19 @@ UNFOLD = {
                         "title": "Device Sessions",
                         "icon": "devices",
                         "link": reverse_lazy("admin:content_studentdevicesession_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": "Payment Instructions",
+                "separator": True,
+                "collapsible": False,
+                "items": [
+                    
+                    {
+                        "title": "Payment Instructions",
+                        "icon": "account_tree",
+                        "link": reverse_lazy("admin:content_paymentinstruction_changelist"),
                     },
                 ],
             },

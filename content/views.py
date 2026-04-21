@@ -16,8 +16,7 @@ from .models import (
     CourseCertificate,
     CourseChangeRequest,
     CourseQuiz,
-    CourseVideo,
-    Category,
+    CourseContent,
     Course,
     Module,
     ModulePurchase,
@@ -42,8 +41,8 @@ User = get_user_model()
 # ─────────────────────────────────────────────────────────
 
 def home(request):
-    """Home page — show courses using the category-style UI."""
-    courses = Course.objects.select_related('category').prefetch_related('modules').all()
+    """Home page — show courses."""
+    courses = Course.objects.prefetch_related('modules').all()
     owned_course_ids = _get_owned_course_ids(request.user)
     return render(request, 'content/home.html', {
         'courses': courses,
@@ -51,64 +50,46 @@ def home(request):
     })
 
 
-def category_detail(request, cat_slug):
-    """Category click should open first details page directly."""
-    category = get_object_or_404(Category, slug=cat_slug)
-    first_detail = category.courses.order_by('name').first()
-    if first_detail:
-        return redirect('content:category_details', cat_slug=category.slug, course_slug=first_detail.slug)
 
-    courses = category.courses.prefetch_related('modules').all()
-    owned_course_ids = _get_owned_course_ids(request.user)
-    return render(request, 'content/category_detail.html', {
-        'category': category,
-        'courses': courses,
-        'owned_course_ids': owned_course_ids,
-    })
-
-
-def course_detail(request, cat_slug, course_slug):
+def course_detail(request, course_slug):
     """Course detail page with module list."""
-    category = get_object_or_404(Category, slug=cat_slug)
-    course = get_object_or_404(Course, category=category, slug=course_slug)
+    course = get_object_or_404(Course, slug=course_slug)
     modules_qs = course.modules.prefetch_related(
-        Prefetch('course_videos', queryset=CourseVideo.objects.order_by('order', 'created_at'))
+        Prefetch('course_contents', queryset=CourseContent.objects.order_by('order', 'created_at'))
     ).all()
     modules = list(modules_qs)
-    # attach first_video attribute to each module (useful in templates)
+    # attach first_content attribute to each module (useful in templates)
     for m in modules:
-        vids = list(m.course_videos.all())
-        m.first_video = vids[0] if vids else None
+        contents = list(m.course_contents.all())
+        m.first_content = contents[0] if contents else None
 
     has_access = _has_module_access(request.user, course)
-    related_courses = category.courses.exclude(id=course.id).prefetch_related('modules')[:3]
+    related_courses = Course.objects.exclude(id=course.id).prefetch_related('modules')[:3]
     owned_course_ids = _get_owned_course_ids(request.user)
-    # find first available video to use for "Start" CTA
-    first_video = None
+    # find first available content to use for "Start" CTA
+    first_content = None
     for m in modules:
-        if getattr(m, 'first_video', None):
-            first_video = m.first_video
+        if getattr(m, 'first_content', None):
+            first_content = m.first_content
             break
     return render(request, 'content/course_detail.html', {
-        'category': category,
         'course': course,
         'modules': modules,
         'has_access': has_access,
         'related_courses': related_courses,
         'owned_course_ids': owned_course_ids,
-        'first_video': first_video,
+        'first_content': first_content,
     })
 
 
-def play_video(request, cat_slug, course_slug, module_slug, video_id):
+def play_video(request, course_slug, module_slug, video_id):
     """Play a video inside a module with a right-side video list"""
-    category = get_object_or_404(Category, slug=cat_slug)
-    course = get_object_or_404(Course, category=category, slug=course_slug)
+    course = get_object_or_404(Course, slug=course_slug)
     module = get_object_or_404(Module, course=course, slug=module_slug)
-    video = get_object_or_404(CourseVideo, id=video_id, module=module)
+    video = get_object_or_404(CourseContent, id=video_id, module=module)
 
     has_access = _has_module_access(request.user, course)
-    videos = module.course_videos.order_by('order', 'created_at').all()
+    videos = module.course_contents.order_by('order', 'created_at').all()
 
     # derive embed info for youtube/mp4
     def _get_embed(url):
@@ -149,7 +130,6 @@ def play_video(request, cat_slug, course_slug, module_slug, video_id):
     embed = _get_embed(video.video_url)
 
     return render(request, 'content/video_player.html', {
-        'category': category,
         'course': course,
         'module': module,
         'video': video,
@@ -163,7 +143,7 @@ def my_modules(request):
     purchases = ModulePurchase.objects.filter(
         user=request.user,
         is_purchased=True,
-    ).select_related('course', 'course__category')
+    ).select_related('course')
     return render(request, 'content/my_modules.html', {'purchases': purchases})
 
 
@@ -188,7 +168,7 @@ def teacher_dashboard(request):
         messages.error(request, 'Only teachers can access this dashboard.')
         return redirect('content:student_dashboard')
 
-    courses = Course.objects.filter(teacher=request.user).select_related('category').prefetch_related('modules')
+    courses = Course.objects.filter(teacher=request.user).prefetch_related('modules')
     course_cards = []
     total_students = 0
     total_courses = courses.count()
@@ -207,7 +187,7 @@ def teacher_dashboard(request):
             'course': course,
             'student_count': student_count,
             'total_subjects': total_modules,
-            'video_count': CourseVideo.objects.filter(module__course=course).count(),
+            'content_count': CourseContent.objects.filter(module__course=course).count(),
             'quiz_count': CourseQuiz.objects.filter(module__course=course).count(),
             'avg_progress': 0,
         })
@@ -228,7 +208,7 @@ def teacher_course_detail(request, course_id):
         messages.error(request, 'Only teachers can access this page.')
         return redirect('content:student_dashboard')
 
-    course = get_object_or_404(Course.objects.select_related('category', 'teacher'), id=course_id, teacher=request.user)
+    course = get_object_or_404(Course.objects.select_related('teacher'), id=course_id, teacher=request.user)
     purchases = course.purchases.filter(is_purchased=True).select_related('user').order_by('-purchased_at')
     students = []
     for purchase in purchases:
@@ -243,14 +223,14 @@ def teacher_course_detail(request, course_id):
             'progress': 0,
         })
 
-    videos = CourseVideo.objects.filter(module__course=course).select_related('module')
+    contents = CourseContent.objects.filter(module__course=course).select_related('module')
     quizzes = CourseQuiz.objects.filter(module__course=course).select_related('module')
     form = CourseChangeRequestForm()
 
     return render(request, 'content/teacher_course_detail.html', {
         'course': course,
         'students': students,
-        'videos': videos,
+        'contents': contents,
         'quizzes': quizzes,
         'change_request_form': form,
         'change_requests': course.change_requests.select_related('teacher').all()[:10],
@@ -338,9 +318,9 @@ def student_dashboard(request):
     purchases = ModulePurchase.objects.filter(
         user=request.user,
         is_purchased=True,
-    ).select_related('course', 'course__category')
+    ).select_related('course')
     purchased_course_ids = set(purchases.values_list('course_id', flat=True))
-    available_courses = Course.objects.select_related('category').exclude(id__in=purchased_course_ids)
+    available_courses = Course.objects.exclude(id__in=purchased_course_ids)
 
     purchased_cards = []
     for purchase in purchases:
@@ -353,7 +333,7 @@ def student_dashboard(request):
             'certificate': CourseCertificate.objects.filter(user=request.user, course=purchase.course).first(),
         })
 
-    certificates = CourseCertificate.objects.filter(user=request.user).select_related('course', 'course__category')
+    certificates = CourseCertificate.objects.filter(user=request.user).select_related('course')
 
     return render(request, 'content/student_dashboard.html', {
         'purchased_cards': purchased_cards,
@@ -419,9 +399,8 @@ def signup(request):
 
 @login_required
 @require_POST
-def buy_module(request, cat_slug, course_slug):
-    category = get_object_or_404(Category, slug=cat_slug)
-    course = get_object_or_404(Course, category=category, slug=course_slug)
+def buy_module(request, course_slug):
+    course = get_object_or_404(Course, slug=course_slug)
 
     purchase, created = ModulePurchase.objects.get_or_create(user=request.user, course=course)
     # mark as purchased when user goes through the buy flow
@@ -437,18 +416,17 @@ def buy_module(request, cat_slug, course_slug):
     next_url = request.POST.get('next')
     if next_url:
         return redirect(next_url)
-    return redirect('content:category_details', cat_slug=category.slug, course_slug=course.slug)
+    return redirect('content:course_detail', course_slug=course.slug)
 
 
 @login_required
-def start_purchase(request, cat_slug, course_slug):
+def start_purchase(request, course_slug):
     """Initialize purchase when user clicks 'এখনই কিনুন'.
 
     - If course is free (is_free or price == 0): create ModulePurchase and mark is_purchased=True then redirect to course details.
     - If course is paid (>0): create ModulePurchase relation (is_purchased=False) if not exists, then redirect to `course_purchase` page.
     """
-    category = get_object_or_404(Category, slug=cat_slug)
-    course = get_object_or_404(Course, category=category, slug=course_slug)
+    course = get_object_or_404(Course, slug=course_slug)
 
     purchase, created = ModulePurchase.objects.get_or_create(user=request.user, course=course)
 
@@ -459,29 +437,27 @@ def start_purchase(request, cat_slug, course_slug):
             purchase.is_purchased = True
             purchase.save()
         messages.success(request, f'"{course.name}" is now added to your account (free course).')
-        return redirect('content:category_details', cat_slug=category.slug, course_slug=course.slug)
+        return redirect('content:course_detail', course_slug=course.slug)
 
     # Paid course: ensure relation exists but keep is_purchased False, then show purchase page
     if purchase.is_purchased:
         messages.info(request, f'You already have access to "{course.name}".')
-        return redirect('content:category_details', cat_slug=category.slug, course_slug=course.slug)
+        return redirect('content:course_detail', course_slug=course.slug)
 
     if created:
         purchase.is_purchased = False
         purchase.save()
 
-    return redirect('content:course_purchase', cat_slug=category.slug, course_slug=course.slug)
+    return redirect('content:course_purchase', course_slug=course.slug)
 
 
 @login_required
-def course_purchase(request, cat_slug, course_slug):
+def course_purchase(request, course_slug):
     """Modern purchase / course detail page showing price and payment options."""
-    category = get_object_or_404(Category, slug=cat_slug)
-    course = get_object_or_404(Course, category=category, slug=course_slug)
+    course = get_object_or_404(Course, slug=course_slug)
 
     # Render a friendly purchase page. The actual purchase action posts to `buy_module`.
     return render(request, 'content/course_purchase.html', {
-        'category': category,
         'course': course,
     })
 

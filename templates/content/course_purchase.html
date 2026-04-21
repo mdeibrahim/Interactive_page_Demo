@@ -10,11 +10,7 @@
         <h1 class="text-2xl font-bold text-slate-900">{{ course.name }}</h1>
         <p class="mt-2 text-sm text-slate-600">{{ course.description|default:'No description provided.' }}</p>
 
-        <dl class="mt-6 grid grid-cols-2 gap-3 text-sm text-slate-600">
-          <div>
-            <dt class="font-semibold text-slate-800">Category</dt>
-            <dd class="mt-1">{{ category.name }}</dd>
-          </div>
+          <dl class="mt-6 grid grid-cols-2 gap-3 text-sm text-slate-600">
           <div>
             <dt class="font-semibold text-slate-800">Price</dt>
             <dd class="mt-1 text-lg font-bold text-slate-900">৳{{ course.price }}</dd>
@@ -38,7 +34,7 @@
         <p class="mt-1 text-sm text-slate-600">Select payment method and proceed. This page simulates a modern checkout flow.</p>
 
         <div class="mt-4">
-          <form method="post" action="{% url 'content:buy_module' category.slug course.slug %}">
+          <form method="post" action="{% url 'content:buy_module' course.slug %}">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
 
