@@ -16,8 +16,8 @@
             <div class="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {% for card in purchased_cards %}
                 <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ card.purchase.subcategory.category.name }}</p>
-                    <h3 class="mt-1 text-xl font-bold text-slate-900">{{ card.purchase.subcategory.name }}</h3>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ card.purchase.course.category.name }}</p>
+                    <h3 class="mt-1 text-xl font-bold text-slate-900">{{ card.purchase.course.name }}</h3>
                     <p class="mt-2 text-sm text-slate-600">Purchased: {{ card.purchase.purchased_at|date:"M d, Y" }}</p>
 
                     <div class="mt-4">
@@ -32,16 +32,16 @@
 
                     <div class="mt-4 flex flex-wrap gap-2">
                         {% if card.has_access %}
-                        <a href="{% url 'content:category_details' card.purchase.subcategory.category.slug card.purchase.subcategory.slug %}" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                        <a href="{% url 'content:category_details' card.purchase.course.category.slug card.purchase.course.slug %}" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
                             <i class="fa-solid fa-book-open"></i> শুরু করুন
                         </a>
                         {% else %}
-                        <a href="{% url 'content:start_purchase' card.purchase.subcategory.category.slug card.purchase.subcategory.slug %}" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                        <a href="{% url 'content:start_purchase' card.purchase.course.category.slug card.purchase.course.slug %}" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
                             <i class="fa-solid fa-credit-card"></i> এখনই কিনুন
                         </a>
                         {% endif %}
                         {% if card.is_completed %}
-                        <form method="post" action="{% url 'content:claim_certificate' card.purchase.subcategory.id %}">
+                        <form method="post" action="{% url 'content:claim_certificate' card.purchase.course.id %}">
                             {% csrf_token %}
                             <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-2 text-sm font-semibold text-white transition hover:from-emerald-700 hover:to-teal-700">
                                 <i class="fa-solid fa-certificate"></i> Claim Certificate
@@ -102,8 +102,8 @@
                     <tbody>
                         {% for cert in certificates %}
                         <tr class="border-b border-slate-100">
-                            <td class="py-2 font-semibold text-slate-800">{{ cert.subcategory.name }}</td>
-                            <td class="py-2">{{ cert.subcategory.category.name }}</td>
+                            <td class="py-2 font-semibold text-slate-800">{{ cert.course.name }}</td>
+                            <td class="py-2">{{ cert.course.category.name }}</td>
                             <td class="py-2 font-bold text-emerald-700">{{ cert.certificate_code }}</td>
                             <td class="py-2">{{ cert.issued_at|date:"M d, Y" }}</td>
                         </tr>
@@ -118,3 +118,5 @@
     </div>
 </section>
 {% endblock %}
+
+

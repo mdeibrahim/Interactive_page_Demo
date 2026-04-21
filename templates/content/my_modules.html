@@ -18,18 +18,18 @@
         {% if purchases %}
         <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {% for purchase in purchases %}
-            <a href="{% url 'content:category_details' purchase.subcategory.category.slug purchase.subcategory.slug %}" class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+            <a href="{% url 'content:category_details' purchase.course.category.slug purchase.course.slug %}" class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                 <div class="flex items-start justify-between">
                     <div class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
                         <i class="fa-solid fa-graduation-cap"></i>
                     </div>
                     <i class="fa-solid fa-arrow-right text-slate-400 transition group-hover:text-slate-700"></i>
                 </div>
-                <h3 class="mt-4 text-lg font-bold text-slate-900">{{ purchase.subcategory.name }}</h3>
-                <p class="mt-1 text-sm text-slate-600">Category: {{ purchase.subcategory.category.name }}</p>
+                <h3 class="mt-4 text-lg font-bold text-slate-900">{{ purchase.course.name }}</h3>
+                <p class="mt-1 text-sm text-slate-600">Category: {{ purchase.course.category.name }}</p>
                 <div class="mt-4 space-y-1 text-sm text-slate-700">
                     <p><i class="fa-solid fa-calendar-check"></i> Bought {{ purchase.purchased_at|date:"M d, Y" }}</p>
-                    <p><i class="fa-solid fa-tag"></i> ৳{{ purchase.subcategory.price }}</p>
+                    <p><i class="fa-solid fa-tag"></i> ৳{{ purchase.course.price }}</p>
                 </div>
             </a>
             {% endfor %}

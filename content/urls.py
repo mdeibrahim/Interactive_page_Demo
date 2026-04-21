@@ -40,38 +40,16 @@ urlpatterns = [
     path('dashboard/teacher/course/<int:course_id>/', views.teacher_course_detail, name='teacher_course_detail'),
     path('dashboard/teacher/course/<int:course_id>/change-request/', views.submit_course_change_request, name='submit_course_change_request'),
     path('dashboard/course/<int:course_id>/claim-certificate/', views.claim_certificate, name='claim_certificate'),
-    path('subject/<int:subject_id>/complete/', views.mark_subject_complete, name='mark_subject_complete'),
     path('my-courses/', views.my_modules, name='my_courses'),
     path('my-modules/', views.my_modules, name='my_modules'),
     path('category/<slug:cat_slug>/', views.category_detail, name='category_detail'),
-    path('category/<slug:cat_slug>/details/<slug:subcat_slug>/', views.subcategory_detail, name='category_details'),
-    path('category/<slug:cat_slug>/<slug:subcat_slug>/', views.subcategory_detail, name='subcategory_detail'),
-    path('category/<slug:cat_slug>/<slug:subcat_slug>/module/<slug:module_slug>/video/<int:video_id>/', views.play_video, name='play_video'),
-    path('category/<slug:cat_slug>/<slug:subcat_slug>/buy/', views.buy_module, name='buy_module'),
-    path('category/<slug:cat_slug>/<slug:subcat_slug>/start-purchase/', views.start_purchase, name='start_purchase'),
-    path('category/<slug:cat_slug>/<slug:subcat_slug>/purchase/', views.course_purchase, name='course_purchase'),
-    path('category/<slug:cat_slug>/<slug:subcat_slug>/<slug:subject_slug>/', views.subject_detail, name='subject_detail'),
-
-    # ── Frontend editor ─────────────────────────────────────────
-    path('editor/subject/<int:subject_id>/', views.subject_editor, name='subject_editor'),
+    path('category/<slug:cat_slug>/details/<slug:course_slug>/', views.course_detail, name='category_details'),
+    path('category/<slug:cat_slug>/<slug:course_slug>/', views.course_detail, name='course_detail'),
+    path('category/<slug:cat_slug>/<slug:course_slug>/module/<slug:module_slug>/video/<int:video_id>/', views.play_video, name='play_video'),
+    path('category/<slug:cat_slug>/<slug:course_slug>/buy/', views.buy_module, name='buy_module'),
+    path('category/<slug:cat_slug>/<slug:course_slug>/start-purchase/', views.start_purchase, name='start_purchase'),
+    path('category/<slug:cat_slug>/<slug:course_slug>/purchase/', views.course_purchase, name='course_purchase'),
 
     # ── Read API ────────────────────────────────────────────────
     path('api/v1/', include('content.api_urls')),
-
-    # ── Legacy AJAX API ─────────────────────────────────────────
-    path('api/content/<int:content_id>/', views.get_interactive_content, name='get_interactive_content'),
-    path('api/subject/<int:subject_id>/', views.api_subject, name='api_subject'),
-
-    # ── Subject save API ────────────────────────────────────────
-    path('api/subject/<int:subject_id>/save/', views.api_subject_save, name='api_subject_save'),
-
-    # ── Interactive content CRUD ─────────────────────────────────
-    path('api/subject/<int:subject_id>/ic/create/', views.api_ic_create, name='api_ic_create'),
-    path('api/ic/<int:ic_id>/update/', views.api_ic_update, name='api_ic_update'),
-    path('api/ic/<int:ic_id>/delete/', views.api_ic_delete, name='api_ic_delete'),
-
-    # ── Accordion section CRUD ───────────────────────────────────
-    path('api/subject/<int:subject_id>/accordion/create/', views.api_accordion_create, name='api_accordion_create'),
-    path('api/accordion/<int:section_id>/update/', views.api_accordion_update, name='api_accordion_update'),
-    path('api/accordion/<int:section_id>/delete/', views.api_accordion_delete, name='api_accordion_delete'),
 ]

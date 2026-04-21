@@ -33,19 +33,14 @@ UNFOLD = {
                         "link": reverse_lazy("admin:content_category_changelist"),
                     },
                     {
-                        "title": "Sub Categories",
+                        "title": "Courses",
                         "icon": "account_tree",
-                        "link": reverse_lazy("admin:content_subcategory_changelist"),
+                        "link": reverse_lazy("admin:content_course_changelist"),
                     },
                     {
-                        "title": "Subjects",
+                        "title": "Modules",
                         "icon": "menu_book",
-                        "link": reverse_lazy("admin:content_subject_changelist"),
-                    },
-                    {
-                        "title": "Interactive Contents",
-                        "icon": "interactive_space",
-                        "link": reverse_lazy("admin:content_interactivecontent_changelist"),
+                        "link": reverse_lazy("admin:content_module_changelist"),
                     },
                     {
                         "title": "Course Videos",
@@ -83,11 +78,6 @@ UNFOLD = {
                         "title": "Certificates",
                         "icon": "verified",
                         "link": reverse_lazy("admin:content_coursecertificate_changelist"),
-                    },
-                    {
-                        "title": "Subject Progress",
-                        "icon": "trending_up",
-                        "link": reverse_lazy("admin:content_subjectprogress_changelist"),
                     },
                 ],
             },

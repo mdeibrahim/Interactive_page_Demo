@@ -1,4 +1,4 @@
-from content.models import Category, SubCategory, Module, CourseVideo
+from content.models import Category, Course, Module, CourseVideo
 
 cat_slug = 'dummy-category'
 cat, created = Category.objects.get_or_create(name='Dummy Category', slug=cat_slug)
@@ -10,7 +10,7 @@ courses = [
 ]
 
 for c in courses:
-    sc, created = SubCategory.objects.get_or_create(category=cat, slug=c["slug"], defaults={"name":c["name"], "description":c["desc"], "price":c["price"]})
+    sc, created = Course.objects.get_or_create(category=cat, slug=c["slug"], defaults={"name":c["name"], "description":c["desc"], "price":c["price"]})
     sc.name = c["name"]
     sc.description = c["desc"]
     sc.price = c["price"]

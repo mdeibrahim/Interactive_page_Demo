@@ -76,8 +76,8 @@ class Category(models.Model):
         return self.name
 
 
-class SubCategory(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
+class Course(models.Model):
+    category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='courses')
     teacher = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='teaching_courses', blank=True, null=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField()
@@ -86,50 +86,20 @@ class SubCategory(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name_plural = "Sub Categories"
-        unique_together = ('category', 'slug')
         ordering = ['name']
+        unique_together = ('category', 'slug')
 
     def __str__(self):
-        return f"{self.category.name} → {self.name}"
+        return f"{self.category.name} - {self.name}"
 
     @property
     def is_free(self):
-        return self.price <= 0
-
-
-class Course(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, related_name='courses', blank=True, null=True)
-    teacher = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='courses', blank=True, null=True)
-    old_subcategory = models.OneToOneField(
-        SubCategory,
-        on_delete=models.SET_NULL,
-        related_name='migrated_course',
-        blank=True,
-        null=True,
-    )
-    name = models.CharField(max_length=255)
-    slug = models.SlugField()
-    description = models.TextField(blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = 'Course'
-        verbose_name_plural = 'Courses'
-        unique_together = ('category', 'slug')
-        ordering = ['name']
-
-    def __str__(self):
-        if self.category:
-            return f"{self.category.name} -> {self.name}"
-        return self.name
+        return (self.price or 0) == 0
 
 
 class Module(models.Model):
-    """A logical module inside a SubCategory/Course. A course can have many modules."""
-    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='modules')
-    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='modules', blank=True, null=True)
+    """A logical module inside a Course. A course can have many modules."""
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='modules')
     title = models.CharField(max_length=255)
     slug = models.SlugField()
     description = models.TextField(blank=True)
@@ -139,143 +109,33 @@ class Module(models.Model):
     class Meta:
         verbose_name = 'Module'
         verbose_name_plural = 'Modules'
-        unique_together = ('subcategory', 'slug')
+        unique_together = ('course', 'slug')
         ordering = ['order', 'title']
 
     def __str__(self):
-        return f"{self.subcategory.name} → {self.title}"
+        return f"{self.course.name} → {self.title}"
 
 
-class Subject(models.Model):
-    """A subject (details page) under a subcategory"""
-    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='subjects')
-    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='subjects', blank=True, null=True)
-    title = models.CharField(max_length=500)
-    slug = models.SlugField()
-    body_content = models.TextField(
-        help_text="HTML content. Use <span class='highlight-link' data-content-id='ID'>text</span> to add interactive highlights."
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+# NOTE: The legacy `Subject` model and its accordion/progress helpers
+# have been removed. Content is now organized around `Module`/`Course`.
 
-    class Meta:
-        unique_together = ('subcategory', 'slug')
-        ordering = ['title']
-
-    def __str__(self):
-        return self.title
-
-
-class AccordionSection(models.Model):
-    """Expandable sidebar sections for a subject"""
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='accordion_sections')
-    title = models.CharField(max_length=255)
-    content = models.TextField(help_text="HTML content for this accordion section")
-    order = models.PositiveIntegerField(default=0)
-    is_open_by_default = models.BooleanField(default=False)
-
-    class Meta:
-        ordering = ['order']
-
-    def __str__(self):
-        return f"{self.subject.title} - {self.title}"
-
-
-CONTENT_TYPE_CHOICES = [
-    ('text', 'Text / Rich HTML'),
-    ('image', 'Image'),
-    ('audio', 'Audio'),
-    ('video', 'Video (Upload)'),
-    ('youtube', 'YouTube Video'),
-]
-
-
-class InteractiveContent(models.Model):
-    """
-    A piece of multimedia content that can be linked to a highlight/click-point
-    inside a subject's body content. Opened in a modal on click.
-    """
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='interactive_contents')
-    title = models.CharField(max_length=255)
-    content_type = models.CharField(max_length=20, choices=CONTENT_TYPE_CHOICES)
-
-    # Text content
-    text_content = models.TextField(blank=True, help_text="For 'text' type — can include HTML with bold/italic/underline")
-
-    # Media files
-    image = models.ImageField(upload_to='interactive/images/', blank=True, null=True)
-    audio = models.FileField(upload_to='interactive/audio/', blank=True, null=True)
-    video = models.FileField(upload_to='interactive/videos/', blank=True, null=True)
-
-    # YouTube
-    youtube_url = models.URLField(blank=True, help_text="Full YouTube URL e.g. https://www.youtube.com/watch?v=...")
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"[{self.get_content_type_display()}] {self.title}"
-
-    def get_youtube_embed_url(self):
-        """Convert a YouTube URL (watch/shorts/youtu.be/embed) to embed URL."""
-        from urllib.parse import urlparse, parse_qs
-        import re
-
-        if not self.youtube_url:
-            return ''
-
-        raw_url = self.youtube_url.strip()
-        video_id = None
-
-        try:
-            parsed = urlparse(raw_url)
-            host = (parsed.netloc or '').lower().replace('www.', '')
-
-            # https://youtube.com/watch?v=VIDEO_ID
-            if host in ('youtube.com', 'm.youtube.com'):
-                if parsed.path == '/watch':
-                    video_id = (parse_qs(parsed.query).get('v') or [None])[0]
-                elif parsed.path.startswith('/shorts/'):
-                    video_id = parsed.path.split('/shorts/', 1)[1].split('/', 1)[0]
-                elif parsed.path.startswith('/live/'):
-                    video_id = parsed.path.split('/live/', 1)[1].split('/', 1)[0]
-                elif parsed.path.startswith('/embed/'):
-                    video_id = parsed.path.split('/embed/', 1)[1].split('/', 1)[0]
-
-            # https://youtu.be/VIDEO_ID
-            elif host == 'youtu.be':
-                video_id = parsed.path.lstrip('/').split('/', 1)[0]
-        except Exception:
-            video_id = None
-
-        # Fallback regex (supports pasted text/HTML containing a YouTube id)
-        if not video_id:
-            match = re.search(r'(?:v=|youtu\.be/|/embed/|/shorts/|/live/)([a-zA-Z0-9_-]{11})', raw_url)
-            if match:
-                video_id = match.group(1)
-
-        if video_id and re.fullmatch(r'[a-zA-Z0-9_-]{11}', video_id):
-            return f"https://www.youtube.com/embed/{video_id}"
-
-        return ''
 
 
 class ModulePurchase(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='module_purchases')
-    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='purchases')
-    course = models.ForeignKey('Course', on_delete=models.SET_NULL, related_name='purchases', blank=True, null=True)
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='purchases')
     is_purchased = models.BooleanField(default=False)
     purchased_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'subcategory')
+        unique_together = ('user', 'course')
         ordering = ['-purchased_at']
 
     def __str__(self):
-        return f"{self.user} purchased {self.subcategory.name}"
+        return f"{self.user} purchased {self.course.name}"
 
 
 class CourseVideo(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='course_videos', blank=True, null=True)
     module = models.ForeignKey('Module', on_delete=models.CASCADE, related_name='course_videos', blank=True, null=True)
     title = models.CharField(max_length=255)
     video_url = models.URLField()
@@ -293,17 +153,11 @@ class CourseVideo(models.Model):
                 source = self.module.title
             except Exception:
                 source = None
-        if not source and self.subject:
-            try:
-                source = self.subject.title
-            except Exception:
-                source = None
         source = source or 'Content'
         return f"{source} - {self.title}"
 
     @property
     def duration(self):
-        # human-friendly duration e.g. 1:23 or 1:02:45
         secs = int(self.duration_seconds or 0)
         if secs < 60:
             return f"0:{secs:02d}"
@@ -315,7 +169,6 @@ class CourseVideo(models.Model):
 
 
 class CourseQuiz(models.Model):
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='course_quizzes', blank=True, null=True)
     module = models.ForeignKey('Module', on_delete=models.CASCADE, related_name='course_quizzes', blank=True, null=True)
     title = models.CharField(max_length=255)
     pass_score = models.PositiveSmallIntegerField(default=50)
@@ -330,11 +183,6 @@ class CourseQuiz(models.Model):
         if self.module:
             try:
                 source = self.module.title
-            except Exception:
-                source = None
-        if not source and self.subject:
-            try:
-                source = self.subject.title
             except Exception:
                 source = None
         source = source or 'Quiz'
@@ -371,34 +219,22 @@ class QuizAttempt(models.Model):
         return f"{self.user.username} - {self.quiz.title} ({self.score}%)"
 
 
-class SubjectProgress(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subject_progress')
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='progress_records')
-    is_completed = models.BooleanField(default=False)
-    completed_at = models.DateTimeField(blank=True, null=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ('user', 'subject')
-        ordering = ['-updated_at']
-
-    def __str__(self):
-        return f"{self.user.username} - {self.subject.title}"
+# `SubjectProgress` removed along with `Subject` model; progress tracking
+# should be migrated to `Module`-level if needed in future work.
 
 
 class CourseCertificate(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_certificates')
-    subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='certificates')
-    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='certificates', blank=True, null=True)
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='certificates')
     certificate_code = models.CharField(max_length=40, unique=True)
     issued_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'subcategory')
+        unique_together = ('user', 'course')
         ordering = ['-issued_at']
 
     def __str__(self):
-        return f"{self.user.username} - {self.subcategory.name} certificate"
+        return f"{self.user.username} - {self.course.name} certificate"
 
 
 class ApprovalStatus(models.TextChoices):
@@ -409,7 +245,7 @@ class ApprovalStatus(models.TextChoices):
 
 class CourseChangeRequest(models.Model):
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_change_requests')
-    course = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='change_requests', blank=True, null=True)
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='change_requests', blank=True, null=True)
     course_new = models.ForeignKey('Course', on_delete=models.SET_NULL, related_name='change_requests_new', blank=True, null=True)
     requested_category = models.ForeignKey(Category, on_delete=models.SET_NULL, related_name='course_add_requests', blank=True, null=True)
     requested_course_name = models.CharField(max_length=255, blank=True, default='')
@@ -428,3 +264,82 @@ class CourseChangeRequest(models.Model):
 
     def __str__(self):
         return f"{self.course.name} - {self.request_type} ({self.status})"
+
+
+
+# CONTENT_TYPE_CHOICES = [
+#     ('text', 'Text / Rich HTML'),
+#     ('image', 'Image'),
+#     ('audio', 'Audio'),
+#     ('video', 'Video (Upload)'),
+#     ('youtube', 'YouTube Video'),
+# ]
+
+
+# class InteractiveContent(models.Model):
+#     """
+#     A piece of multimedia content that can be linked to a highlight/click-point
+#     inside a subject's body content. Opened in a modal on click.
+#     """
+#     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='interactive_contents')
+#     title = models.CharField(max_length=255)
+#     content_type = models.CharField(max_length=20, choices=CONTENT_TYPE_CHOICES)
+
+#     # Text content
+#     text_content = models.TextField(blank=True, help_text="For 'text' type — can include HTML with bold/italic/underline")
+
+#     # Media files
+#     image = models.ImageField(upload_to='interactive/images/', blank=True, null=True)
+#     audio = models.FileField(upload_to='interactive/audio/', blank=True, null=True)
+#     video = models.FileField(upload_to='interactive/videos/', blank=True, null=True)
+
+#     # YouTube
+#     youtube_url = models.URLField(blank=True, help_text="Full YouTube URL e.g. https://www.youtube.com/watch?v=...")
+
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+#     def __str__(self):
+#         return f"[{self.get_content_type_display()}] {self.title}"
+
+#     def get_youtube_embed_url(self):
+#         """Convert a YouTube URL (watch/shorts/youtu.be/embed) to embed URL."""
+#         from urllib.parse import urlparse, parse_qs
+#         import re
+
+#         if not self.youtube_url:
+#             return ''
+
+#         raw_url = self.youtube_url.strip()
+#         video_id = None
+
+#         try:
+#             parsed = urlparse(raw_url)
+#             host = (parsed.netloc or '').lower().replace('www.', '')
+
+#             # https://youtube.com/watch?v=VIDEO_ID
+#             if host in ('youtube.com', 'm.youtube.com'):
+#                 if parsed.path == '/watch':
+#                     video_id = (parse_qs(parsed.query).get('v') or [None])[0]
+#                 elif parsed.path.startswith('/shorts/'):
+#                     video_id = parsed.path.split('/shorts/', 1)[1].split('/', 1)[0]
+#                 elif parsed.path.startswith('/live/'):
+#                     video_id = parsed.path.split('/live/', 1)[1].split('/', 1)[0]
+#                 elif parsed.path.startswith('/embed/'):
+#                     video_id = parsed.path.split('/embed/', 1)[1].split('/', 1)[0]
+
+#             # https://youtu.be/VIDEO_ID
+#             elif host == 'youtu.be':
+#                 video_id = parsed.path.lstrip('/').split('/', 1)[0]
+#         except Exception:
+#             video_id = None
+
+#         # Fallback regex (supports pasted text/HTML containing a YouTube id)
+#         if not video_id:
+#             match = re.search(r'(?:v=|youtu\.be/|/embed/|/shorts/|/live/)([a-zA-Z0-9_-]{11})', raw_url)
+#             if match:
+#                 video_id = match.group(1)
+
+#         if video_id and re.fullmatch(r'[a-zA-Z0-9_-]{11}', video_id):
+#             return f"https://www.youtube.com/embed/{video_id}"
+
+#         return ''

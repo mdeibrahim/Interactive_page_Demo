@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ video.title }} — {{ module.title }} — {{ subcategory.name }}{% endblock %}
+{% block title %}{{ video.title }} — {{ module.title }} — {{ course.name }}{% endblock %}
 
 {% block content %}
 <section class="py-8 sm:py-10">
@@ -9,13 +9,13 @@
             <div class="lg:col-span-8">
                 <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
                     <h1 class="text-2xl font-bold text-slate-900">{{ video.title }}</h1>
-                    <p class="text-sm text-slate-500 mt-1">{{ module.title }} — {{ subcategory.name }}</p>
+                    <p class="text-sm text-slate-500 mt-1">{{ module.title }} — {{ course.name }}</p>
 
                     <div class="mt-4">
                         {% if not has_access %}
                         <div class="rounded-lg border border-rose-200 bg-rose-50 p-6 text-center text-rose-700">
                             <p class="font-bold">এই কনটেন্টটি আনলক করা প্রয়োজন</p>
-                            <a href="{% url 'content:buy_module' category.slug subcategory.slug %}" class="mt-3 inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 font-bold text-slate-900">কিনুন / আনলক করুন</a>
+                            <a href="{% url 'content:buy_module' category.slug course.slug %}" class="mt-3 inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 font-bold text-slate-900">কিনুন / আনলক করুন</a>
                         </div>
                         {% else %}
                         <div class="aspect-video w-full overflow-hidden rounded-lg bg-black">
@@ -53,7 +53,7 @@
                         <ul class="space-y-2">
                             {% for v in videos %}
                             <li>
-                                <a href="{% url 'content:play_video' category.slug subcategory.slug module.slug v.id %}" class="flex items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-slate-50 {% if v.id == video.id %}bg-slate-100{% endif %}">
+                                <a href="{% url 'content:play_video' category.slug course.slug module.slug v.id %}" class="flex items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-slate-50 {% if v.id == video.id %}bg-slate-100{% endif %}">
                                     <div class="min-w-0">
                                         <p class="truncate text-sm font-medium text-slate-800">{{ forloop.counter }}. {{ v.title }}</p>
                                         <p class="mt-1 text-xs text-slate-500">{{ v.title }}</p>
@@ -72,3 +72,5 @@
     </div>
 </section>
 {% endblock %}
+
+

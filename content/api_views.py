@@ -17,18 +17,14 @@ from .api_permissions import IsTeacher, IsStudent
 from .api_serializers import (
     CategorySummarySerializer,
     DetailSummarySerializer,
-    SubjectSummarySerializer,
     UserRegisterSerializer,
     UserSummarySerializer,
 )
 from .models import (
-    AccordionSection,
     Category,
-    InteractiveContent,
     ModulePurchase,
     StudentDeviceSession,
-    SubCategory,
-    Subject,
+    Course,
     UserProfile,
     UserRole,
 )
@@ -52,7 +48,7 @@ def _has_detail_access(user, detail):
         return False
     return ModulePurchase.objects.filter(
         user=user,
-        subcategory=detail,
+        course=detail,
         is_purchased=True,
     ).exists()
 
@@ -90,31 +86,6 @@ def _enforce_student_device_limit(user, refresh, request):
         _blacklist_by_jti(oldest.jti)
         oldest.delete()
         sessions = StudentDeviceSession.objects.filter(user=user).order_by('created_at')
-
-
-def _serialize_interactive(content):
-    return {
-        'id': content.id,
-        'title': content.title,
-        'content_type': content.content_type,
-        'text_content': content.text_content,
-        'image_url': content.image.url if content.image else None,
-        'audio_url': content.audio.url if content.audio else None,
-        'video_url': content.video.url if content.video else None,
-        'youtube_url': content.youtube_url,
-        'youtube_embed_url': content.get_youtube_embed_url(),
-    }
-
-
-def _serialize_section(section):
-    return {
-        'id': section.id,
-        'title': section.title,
-        'content': section.content,
-        'order': section.order,
-        'is_open_by_default': section.is_open_by_default,
-    }
-
 
 class RegisterAPIView(APIView):
     permission_classes = [AllowAny]
@@ -249,10 +220,10 @@ class CategoryListAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        default_detail_slug_sq = SubCategory.objects.filter(category=OuterRef('pk')).order_by('name').values('slug')[:1]
+        default_detail_slug_sq = Course.objects.filter(category=OuterRef('pk')).order_by('name').values('slug')[:1]
         categories = Category.objects.annotate(
             default_detail_slug=Subquery(default_detail_slug_sq)
-        ).prefetch_related('subcategories').all()
+        ).prefetch_related('courses').all()
         return Response(CategorySummarySerializer(categories, many=True).data)
 
 
@@ -264,7 +235,7 @@ class CategoryDetailsListAPIView(APIView):
         if not category:
             return Response({'detail': 'Category not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        details = category.subcategories.prefetch_related('subjects').all()
+        details = category.courses.prefetch_related('modules').all()
         payload = {
             'category': CategorySummarySerializer(category).data,
             'details': DetailSummarySerializer(details, many=True).data,
@@ -275,16 +246,15 @@ class CategoryDetailsListAPIView(APIView):
 class DetailRetrieveAPIView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request, cat_slug, subcat_slug):
+    def get(self, request, cat_slug, course_slug):
         category = Category.objects.filter(slug=cat_slug).first()
         if not category:
             return Response({'detail': 'Category not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        detail = SubCategory.objects.filter(category=category, slug=subcat_slug).first()
+        detail = Course.objects.filter(category=category, slug=course_slug).first()
         if not detail:
             return Response({'detail': 'Details not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        subjects = detail.subjects.all()
         has_access = _has_detail_access(request.user, detail)
 
         return Response(
@@ -292,42 +262,6 @@ class DetailRetrieveAPIView(APIView):
                 'category': CategorySummarySerializer(category).data,
                 'detail': DetailSummarySerializer(detail).data,
                 'has_access': has_access,
-                'subjects': SubjectSummarySerializer(subjects, many=True).data,
-            }
-        )
-
-
-class SubjectRetrieveAPIView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request, cat_slug, subcat_slug, subject_slug):
-        category = Category.objects.filter(slug=cat_slug).first()
-        if not category:
-            return Response({'detail': 'Category not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        detail = SubCategory.objects.filter(category=category, slug=subcat_slug).first()
-        if not detail:
-            return Response({'detail': 'Details not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        subject = Subject.objects.filter(subcategory=detail, slug=subject_slug).first()
-        if not subject:
-            return Response({'detail': 'Subject not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        if not _has_detail_access(request.user, detail):
-            return Response({'detail': 'Course access required.'}, status=status.HTTP_403_FORBIDDEN)
-
-        sections = AccordionSection.objects.filter(subject=subject)
-        interactive = InteractiveContent.objects.filter(subject=subject)
-
-        return Response(
-            {
-                'id': subject.id,
-                'title': subject.title,
-                'slug': subject.slug,
-                'body_content': subject.body_content,
-                'updated_at': subject.updated_at,
-                'accordion_sections': [_serialize_section(s) for s in sections],
-                'interactive_contents': [_serialize_interactive(ic) for ic in interactive],
             }
         )
 
@@ -335,16 +269,16 @@ class SubjectRetrieveAPIView(APIView):
 class BuyDetailAPIView(APIView):
     permission_classes = [IsAuthenticated, IsStudent]
 
-    def post(self, request, cat_slug, subcat_slug):
+    def post(self, request, cat_slug, course_slug):
         category = Category.objects.filter(slug=cat_slug).first()
         if not category:
             return Response({'detail': 'Category not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        detail = SubCategory.objects.filter(category=category, slug=subcat_slug).first()
+        detail = Course.objects.filter(category=category, slug=course_slug).first()
         if not detail:
             return Response({'detail': 'Details not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        purchase, _ = ModulePurchase.objects.get_or_create(user=request.user, subcategory=detail)
+        purchase, _ = ModulePurchase.objects.get_or_create(user=request.user, course=detail)
         if not purchase.is_purchased:
             purchase.is_purchased = True
             purchase.save(update_fields=['is_purchased'])
@@ -366,40 +300,18 @@ class MyModulesAPIView(APIView):
         purchases = ModulePurchase.objects.filter(
             user=request.user,
             is_purchased=True,
-        ).select_related('subcategory', 'subcategory__category')
+        ).select_related('course', 'course__category')
         data = [
             {
                 'id': p.id,
-                'category': p.subcategory.category.name,
-                'category_slug': p.subcategory.category.slug,
-                'detail_name': p.subcategory.name,
-                'detail_slug': p.subcategory.slug,
-                'price': p.subcategory.price,
+                'category': p.course.category.name,
+                'category_slug': p.course.category.slug,
+                'detail_name': p.course.name,
+                'detail_slug': p.course.slug,
+                'price': p.course.price,
                 'purchased_at': p.purchased_at,
             }
             for p in purchases
         ]
         return Response(data)
 
-
-class TeacherSubjectUpdateAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsTeacher]
-
-    def patch(self, request, subject_id):
-        subject = Subject.objects.filter(id=subject_id).first()
-        if not subject:
-            return Response({'detail': 'Subject not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        title = request.data.get('title')
-        body_content = request.data.get('body_content')
-
-        if title is not None:
-            title = str(title).strip()
-            if title:
-                subject.title = title
-
-        if body_content is not None:
-            subject.body_content = str(body_content)
-
-        subject.save()
-        return Response({'message': 'Subject updated successfully.', 'updated_at': subject.updated_at})

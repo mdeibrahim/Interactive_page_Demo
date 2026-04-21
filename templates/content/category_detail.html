@@ -49,10 +49,10 @@
             </div>
         </div>
 
-        {% if subcategories %}
+        {% if courses %}
         <div class="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {% for subcat in subcategories %}
-            <a href="{% url 'content:category_details' category.slug subcat.slug %}"
+            {% for course in courses %}
+            <a href="{% url 'content:category_details' category.slug course.slug %}"
                class="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                 <div class="relative h-44 overflow-hidden bg-gradient-to-r from-indigo-700 via-blue-600 to-cyan-500 p-5 text-white">
                     <div class="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/20"></div>
@@ -61,32 +61,32 @@
                         <i class="fa-solid fa-graduation-cap"></i>
                         {{ category.name|truncatechars:22 }}
                     </div>
-                    <h3 class="mt-4 text-3xl font-bold tracking-tight text-amber-300">{{ subcat.name|truncatechars:18 }}</h3>
+                    <h3 class="mt-4 text-3xl font-bold tracking-tight text-amber-300">{{ course.name|truncatechars:18 }}</h3>
                     <p class="mt-1 text-base font-medium text-white/90">Academic Course</p>
                 </div>
 
                 <div class="p-5">
                     <div class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-                        {{ subcat.name|truncatechars:14 }}
+                        {{ course.name|truncatechars:14 }}
                     </div>
 
-                    <h3 class="mt-4 text-2xl font-extrabold leading-tight text-slate-900">{{ subcat.name }}</h3>
-                    <p class="course-desc mt-2 text-sm leading-6 text-slate-600">{{ subcat.description|default:"এই course-এ structured lesson, interactive content, এবং exam-focused explanation পাওয়া যাবে।" }}</p>
+                    <h3 class="mt-4 text-2xl font-extrabold leading-tight text-slate-900">{{ course.name }}</h3>
+                    <p class="course-desc mt-2 text-sm leading-6 text-slate-600">{{ course.description|default:"এই course-এ structured lesson এবং exam-focused explanation পাওয়া যাবে।" }}</p>
 
                     <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
                         <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-blue-700">
-                            <i class="fa-solid fa-file-lines"></i> {{ subcat.subjects.count }} lessons
+                            <i class="fa-solid fa-file-lines"></i> {{ course.modules.count }} modules
                         </span>
-                        {% if subcat.is_free %}
+                        {% if course.is_free %}
                         <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
                             <i class="fa-solid fa-gift"></i> Free
                         </span>
                         {% else %}
                         <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-amber-700">
-                            <i class="fa-solid fa-tag"></i> ৳{{ subcat.price }}
+                            <i class="fa-solid fa-tag"></i> ৳{{ course.price }}
                         </span>
                         {% endif %}
-                        {% if subcat.id in owned_subcategory_ids or subcat.is_free %}
+                        {% if course.id in owned_course_ids or course.is_free %}
                         <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
                             <i class="fa-solid fa-circle-check"></i> Access Ready
                         </span>
@@ -100,8 +100,8 @@
                     <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
                         <p class="mb-2 font-semibold text-slate-700">এই course-এ যা থাকছে:</p>
                         <ul class="space-y-1">
-                            <li><i class="fa-solid fa-check text-emerald-600"></i> {{ subcat.subjects.count }} structured lesson</li>
-                            <li><i class="fa-solid fa-check text-emerald-600"></i> Interactive learning content</li>
+                            <li><i class="fa-solid fa-check text-emerald-600"></i> {{ course.modules.count }} structured modules</li>
+                            <li><i class="fa-solid fa-check text-emerald-600"></i> Video-based learning flow</li>
                             <li><i class="fa-solid fa-check text-emerald-600"></i> Step-by-step topic coverage</li>
                         </ul>
                     </div>
@@ -109,7 +109,7 @@
                     <div class="mt-5 flex items-center justify-between">
                         <div class="text-sm text-slate-500">
                             <span class="font-medium text-slate-700">Created:</span>
-                            {{ subcat.created_at|date:"M d, Y" }}
+                            {{ course.created_at|date:"M d, Y" }}
                         </div>
                         <span class="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-base font-extrabold text-slate-900 transition group-hover:bg-yellow-300">
                             বিস্তারিত দেখুন
@@ -132,3 +132,4 @@
     </div>
 </section>
 {% endblock %}
+

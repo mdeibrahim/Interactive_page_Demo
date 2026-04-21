@@ -364,9 +364,7 @@
             <nav>
                 <ul class="sidebar-list">
                     <li><a href="{% url 'admin:content_category_changelist' %}">Categories <span class="badge">{{ stats.categories_count }}</span></a></li>
-                    <li><a href="{% url 'admin:content_subcategory_changelist' %}">Subcategories <span class="badge">{{ stats.subcategories_count }}</span></a></li>
-                    <li><a href="{% url 'admin:content_subject_changelist' %}">Subjects <span class="badge">{{ stats.subjects_count }}</span></a></li>
-                    <li><a href="{% url 'admin:content_interactivecontent_changelist' %}">Interactive Items <span class="badge">{{ stats.interactive_contents_count }}</span></a></li>
+                    <li><a href="{% url 'admin:content_course_changelist' %}">Courses <span class="badge">{{ stats.courses_count }}</span></a></li>
                     <li><a href="{% url 'admin:content_module_changelist' %}">Modules <span class="badge">{{ stats.modules_count }}</span></a></li>
                 </ul>
             </nav>
@@ -378,10 +376,8 @@
             <p>Monitor content quality, identify gaps, and jump to high-impact admin actions.</p>
         </div>
         <div class="quick-actions">
-            <a class="action-btn action-btn-primary" href="{% url 'admin:content_subject_add' %}">+ New Subject</a>
-            <a class="action-btn action-btn-soft" href="{% url 'admin:content_interactivecontent_add' %}">+ New Interactive Item</a>
-            <a class="action-btn action-btn-soft" href="{% url 'admin:content_accordionsection_add' %}">+ New Accordion</a>
-            <a class="action-btn action-btn-soft" href="{% url 'admin:content_subject_changelist' %}">Manage Subjects</a>
+            <a class="action-btn action-btn-primary" href="{% url 'admin:content_module_add' %}">+ New Module</a>
+            <a class="action-btn action-btn-soft" href="{% url 'admin:content_module_changelist' %}">Manage Modules</a>
         </div>
     </div>
 
@@ -389,27 +385,17 @@
         <article class="kpi-card">
             <p class="kpi-label">Categories</p>
             <p class="kpi-value">{{ stats.categories_count }}</p>
-            <p class="kpi-footnote">{{ health.categories_without_subcategories }} empty</p>
+            <p class="kpi-footnote">{{ health.categories_without_courses }} empty</p>
         </article>
         <article class="kpi-card">
             <p class="kpi-label">Sub Categories</p>
-            <p class="kpi-value">{{ stats.subcategories_count }}</p>
-            <p class="kpi-footnote">{{ health.subcategories_without_subjects }} without subjects</p>
+            <p class="kpi-value">{{ stats.courses_count }}</p>
+            <p class="kpi-footnote">{{ health.courses_without_modules }} without modules</p>
         </article>
         <article class="kpi-card">
-            <p class="kpi-label">Subjects</p>
-            <p class="kpi-value">{{ stats.subjects_count }}</p>
-            <p class="kpi-footnote">{{ health.subjects_without_interactive }} missing interactive content</p>
-        </article>
-        <article class="kpi-card">
-            <p class="kpi-label">Interactive Items</p>
-            <p class="kpi-value">{{ stats.interactive_contents_count }}</p>
-            <p class="kpi-footnote">avg {{ health.average_interactive_per_subject }} per subject</p>
-        </article>
-        <article class="kpi-card">
-            <p class="kpi-label">Accordion Sections</p>
-            <p class="kpi-value">{{ stats.accordion_sections_count }}</p>
-            <p class="kpi-footnote">structured side content</p>
+            <p class="kpi-label">Modules</p>
+            <p class="kpi-value">{{ stats.modules_count }}</p>
+            <p class="kpi-footnote">course structure units</p>
         </article>
         <article class="kpi-card">
             <p class="kpi-label">Admin Users</p>
@@ -423,35 +409,31 @@
             <h2>Content Health</h2>
             <div class="health-row">
                 <label>
-                    <span>Subjects with interactive content</span>
-                    <span>{{ health.subject_coverage }}%</span>
+                    <span>Categories missing courses</span>
+                    <span>{{ health.categories_without_courses }}</span>
                 </label>
-                <div class="meter"><span style="width: {{ health.subject_coverage }}%;"></span></div>
+                <div class="meter"><span style="width: {% if health.categories_without_courses %}35%{% else %}100%{% endif %};"></span></div>
             </div>
             <div class="health-row">
                 <label>
-                    <span>Subjects covered</span>
-                    <span>{{ health.subjects_with_interactive }} / {{ stats.subjects_count }}</span>
+                    <span>courses missing modules</span>
+                    <span>{{ health.courses_without_modules }}</span>
                 </label>
-                <div class="meter"><span style="width: {{ health.subject_coverage }}%;"></span></div>
+                <div class="meter"><span style="width: {% if health.courses_without_modules %}35%{% else %}100%{% endif %};"></span></div>
             </div>
-            <p class="muted">Target: keep this above 80% so most subject pages feel interactive.</p>
+            <p class="muted">Track structural completeness across categories, courses, and modules.</p>
         </section>
 
         <section class="panel">
             <h2>Actionable Gaps</h2>
             <ul class="warning-list">
                 <li class="warning-item">
-                    <span>Categories without subcategories</span>
-                    <strong>{{ health.categories_without_subcategories }}</strong>
+                    <span>Categories without courses</span>
+                    <strong>{{ health.categories_without_courses }}</strong>
                 </li>
                 <li class="warning-item">
-                    <span>Subcategories without subjects</span>
-                    <strong>{{ health.subcategories_without_subjects }}</strong>
-                </li>
-                <li class="warning-item">
-                    <span>Subjects without interactive content</span>
-                    <strong>{{ health.subjects_without_interactive }}</strong>
+                    <span>courses without modules</span>
+                    <strong>{{ health.courses_without_modules }}</strong>
                 </li>
             </ul>
         </section>
@@ -465,7 +447,7 @@
                     <thead>
                         <tr>
                             <th>Category</th>
-                            <th>Subjects</th>
+                            <th>Modules</th>
                             <th>Go</th>
                         </tr>
                     </thead>
@@ -473,7 +455,7 @@
                         {% for cat in categories_with_counts %}
                         <tr>
                             <td>{{ cat.name }}</td>
-                            <td><span class="badge badge-brand">{{ cat.subject_count }}</span></td>
+                            <td><span class="badge badge-brand">{{ cat.module_count }}</span></td>
                             <td><a class="edit-link" href="{% url 'admin:content_category_change' cat.id %}">Edit</a></td>
                         </tr>
                         {% empty %}
@@ -485,118 +467,37 @@
         </section>
 
         <section class="panel">
-            <h2>Interactive Media Mix</h2>
-            <div class="table-wrap">
-                <table class="dashboard-table">
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Count</th>
-                            <th>Share</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in content_types_dist %}
-                        <tr>
-                            <td>{{ item.label }}</td>
-                            <td><span class="badge badge-success">{{ item.count }}</span></td>
-                            <td>{{ item.percentage }}%</td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="3" class="empty">No interactive content yet.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    </div>
-
-    <section class="panel" style="margin-bottom: 14px;">
-        <h2>Top Subjects by Interactive Density</h2>
-        <div class="table-wrap">
-            <table class="dashboard-table">
-                <thead>
-                    <tr>
-                        <th>Subject</th>
-                        <th>Category</th>
-                        <th>Interactive Items</th>
-                        <th>Go</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for subject in top_subjects_by_content %}
-                    <tr>
-                        <td>{{ subject.title }}</td>
-                        <td>{{ subject.subcategory.category.name }}</td>
-                        <td><span class="badge badge-brand">{{ subject.interactive_total }}</span></td>
-                        <td><a class="edit-link" href="{% url 'admin:content_subject_change' subject.id %}">Edit</a></td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="4" class="empty">No subjects available yet.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <div class="split-grid">
-        <section class="panel">
-            <h2>Recently Updated Subjects</h2>
+            <h2>Recently Added Modules</h2>
             <div class="table-wrap">
                 <table class="dashboard-table">
                     <thead>
                         <tr>
                             <th>Title</th>
                             <th>Category</th>
-                            <th>Updated</th>
+                            <th>Created</th>
                             <th>Go</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for subject in latest_subjects %}
+                        {% for module in latest_modules %}
                         <tr>
-                            <td>{{ subject.title }}</td>
-                            <td>{{ subject.subcategory.category.name }}</td>
-                            <td>{{ subject.updated_at|date:"d M Y, H:i" }}</td>
-                            <td><a class="edit-link" href="{% url 'admin:content_subject_change' subject.id %}">Edit</a></td>
+                            <td>{{ module.title }}</td>
+                            <td>{{ module.course.category.name }}</td>
+                            <td>{{ module.created_at|date:"d M Y, H:i" }}</td>
+                            <td><a class="edit-link" href="{% url 'admin:content_module_change' module.id %}">Edit</a></td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="4" class="empty">No subjects updated yet.</td></tr>
+                        <tr><td colspan="4" class="empty">No modules added yet.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </section>
 
-        <section class="panel">
-            <h2>Recently Added Interactive Items</h2>
-            <div class="table-wrap">
-                <table class="dashboard-table">
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Type</th>
-                            <th>Subject</th>
-                            <th>Go</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for content in latest_contents %}
-                        <tr>
-                            <td>{{ content.title }}</td>
-                            <td><span class="badge badge-success">{{ content.get_content_type_display }}</span></td>
-                            <td>{{ content.subject.title }}</td>
-                            <td><a class="edit-link" href="{% url 'admin:content_interactivecontent_change' content.id %}">Edit</a></td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="4" class="empty">No interactive items yet.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
     </div>
         </main>
     </div>
 </div>
 {% endblock %}
+
+

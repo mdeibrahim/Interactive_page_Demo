@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import Category, SubCategory, Subject, UserProfile, UserRole
+from .models import Category, Course, UserProfile, UserRole
 
 
 User = get_user_model()
@@ -117,27 +117,17 @@ class UserSummarySerializer(serializers.ModelSerializer):
             payload['teacher_experience_years'] = profile.teacher_experience_years
         return payload
 
-
-class SubjectSummarySerializer(serializers.ModelSerializer):
-    section_count = serializers.IntegerField(source='accordion_sections.count', read_only=True)
-    interactive_count = serializers.IntegerField(source='interactive_contents.count', read_only=True)
-
-    class Meta:
-        model = Subject
-        fields = ('id', 'title', 'slug', 'updated_at', 'section_count', 'interactive_count')
-
-
 class DetailSummarySerializer(serializers.ModelSerializer):
-    subject_count = serializers.IntegerField(source='subjects.count', read_only=True)
+    module_count = serializers.IntegerField(source='modules.count', read_only=True)
     is_free = serializers.BooleanField(read_only=True)
 
     class Meta:
-        model = SubCategory
-        fields = ('id', 'name', 'slug', 'description', 'price', 'is_free', 'subject_count', 'created_at')
+        model = Course
+        fields = ('id', 'name', 'slug', 'description', 'price', 'is_free', 'module_count', 'created_at')
 
 
 class CategorySummarySerializer(serializers.ModelSerializer):
-    detail_count = serializers.IntegerField(source='subcategories.count', read_only=True)
+    detail_count = serializers.IntegerField(source='courses.count', read_only=True)
     default_detail_slug = serializers.CharField(read_only=True)
 
     class Meta:

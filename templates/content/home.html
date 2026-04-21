@@ -70,7 +70,7 @@
                 </h1>
 
                 <p class="reveal-up-3 mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-                    Structured categories, unlockable courses, and rich media experiences in one place. Study with engaging text, image, audio, and video based lessons.
+                    Structured categories, unlockable courses, and module-based video learning in one place. Study with focused lessons and guided course flow.
                 </p>
 
                 <div class="reveal-up-3 mt-8 flex flex-wrap gap-3">
@@ -107,17 +107,17 @@
                     </div>
                     <div class="grid gap-3">
                         <div class="rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 p-4 text-white">
-                            <p class="text-xs font-semibold uppercase tracking-wider text-cyan-100">Interactive Content</p>
-                            <p class="mt-1 text-lg font-bold">Text, Audio, Video, YouTube</p>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-cyan-100">Course Structure</p>
+                            <p class="mt-1 text-lg font-bold">Modules, Videos, Guided Flow</p>
                         </div>
                         <div class="grid gap-3 sm:grid-cols-2">
                             <div class="rounded-2xl border border-slate-200 bg-white p-4">
                                 <p class="text-sm font-semibold text-slate-900"><i class="fa-solid fa-brain text-violet-600"></i> Smart Learning</p>
-                                <p class="mt-1 text-sm text-slate-600">Micro sections with focused explanations.</p>
+                                <p class="mt-1 text-sm text-slate-600">Module-by-module focused explanations.</p>
                             </div>
                             <div class="rounded-2xl border border-slate-200 bg-white p-4">
                                 <p class="text-sm font-semibold text-slate-900"><i class="fa-solid fa-layer-group text-emerald-600"></i> Structured Flow</p>
-                                <p class="mt-1 text-sm text-slate-600">Category to subject journey for clarity.</p>
+                                <p class="mt-1 text-sm text-slate-600">Category to module journey for clarity.</p>
                             </div>
                         </div>
                         <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
@@ -158,11 +158,11 @@
                         {{ course.name|truncatechars:14 }}
                     </div>
                     <h3 class="mt-4 text-2xl font-extrabold leading-tight text-slate-900">{{ course.name }}</h3>
-                    <p class="course-desc mt-2 text-sm leading-6 text-slate-600">{{ course.description|default:"এই course-এ structured lesson, interactive content, এবং exam-focused explanation পাওয়া যাবে।" }}</p>
+                    <p class="course-desc mt-2 text-sm leading-6 text-slate-600">{{ course.description|default:"এই course-এ structured lesson এবং exam-focused explanation পাওয়া যাবে।" }}</p>
 
                     <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
                         <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-blue-700">
-                            <i class="fa-solid fa-layer-group"></i> {{ course.subjects.count }} lessons
+                            <i class="fa-solid fa-layer-group"></i> {{ course.modules.count }} modules
                         </span>
                         <span class="inline-flex items-center gap-1 rounded-full bg-violet-100 px-3 py-1 text-violet-700">
                             <i class="fa-solid fa-book-open"></i> Guided Learning
@@ -289,10 +289,10 @@
                     <p class="mt-2 text-sm text-fuchsia-100 sm:text-base">Your complete digital classroom with visually rich, modular content and focused learning paths.</p>
                 </div>
                 <div class="flex flex-wrap gap-2 lg:justify-end">
-                    <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1.5 text-xs font-semibold sm:text-sm"><i class="fa-solid fa-image"></i> Image</span>
-                    <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1.5 text-xs font-semibold sm:text-sm"><i class="fa-solid fa-headphones"></i> Audio</span>
-                    <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1.5 text-xs font-semibold sm:text-sm"><i class="fa-brands fa-youtube"></i> YouTube</span>
-                    <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1.5 text-xs font-semibold sm:text-sm"><i class="fa-solid fa-video"></i> Video</span>
+                    <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1.5 text-xs font-semibold sm:text-sm"><i class="fa-solid fa-layer-group"></i> Modules</span>
+                    <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1.5 text-xs font-semibold sm:text-sm"><i class="fa-solid fa-video"></i> Videos</span>
+                    <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1.5 text-xs font-semibold sm:text-sm"><i class="fa-solid fa-list-check"></i> Structured</span>
+                    <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1.5 text-xs font-semibold sm:text-sm"><i class="fa-solid fa-mobile-screen"></i> Mobile Ready</span>
                 </div>
             </div>
         </div>
