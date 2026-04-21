@@ -20,10 +20,52 @@
                         {% else %}
                         <div class="aspect-video w-full overflow-hidden rounded-lg bg-black">
                             {% if embed.type == 'youtube' %}
-                            <iframe class="w-full h-full" src="{{ embed.embed_url }}" frameborder="0" allowfullscreen></iframe>
-                            <div class="mt-2 text-center text-sm">
+                            <div id="yt-player" class="w-full h-full"></div>
+                            <div id="yt-fallback" class="mt-2 text-center text-sm hidden">
                                 <a href="{{ video.youtube_url|default:video.video_url }}" target="_blank" rel="noopener noreferrer" class="underline">Open on YouTube</a>
                             </div>
+                            <script>
+                                (function(){
+                                    var videoId = "{{ embed.video_id|default:'' }}";
+                                    var playerEl = document.getElementById('yt-player');
+                                    var fallbackEl = document.getElementById('yt-fallback');
+
+                                    function showFallback(){
+                                        if(playerEl) playerEl.style.display = 'none';
+                                        if(fallbackEl) fallbackEl.classList.remove('hidden');
+                                    }
+
+                                    function createPlayer(){
+                                        if(!videoId){ showFallback(); return; }
+                                        try{
+                                            new YT.Player('yt-player', {
+                                                height: '100%',
+                                                width: '100%',
+                                                videoId: videoId,
+                                                playerVars: {rel:0, modestbranding:1},
+                                                events: {
+                                                    'onError': function(e){
+                                                        // 101/150 => embedding disabled by owner
+                                                        if(e && (e.data === 101 || e.data === 150)){
+                                                            showFallback();
+                                                        }
+                                                    }
+                                                }
+                                            });
+                                        }catch(err){
+                                            showFallback();
+                                        }
+                                    }
+
+                                    if(typeof YT === 'undefined' || typeof YT.Player === 'undefined'){
+                                        var tag = document.createElement('script');
+                                        tag.src = 'https://www.youtube.com/iframe_api';
+                                        var firstScriptTag = document.getElementsByTagName('script')[0];
+                                        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                                        window.onYouTubeIframeAPIReady = function(){ createPlayer(); };
+                                    } else { createPlayer(); }
+                                })();
+                            </script>
                             {% elif embed.type == 'mp4' %}
                             <video class="w-full h-full" controls>
                                 <source src="{{ embed.url }}" type="video/mp4">

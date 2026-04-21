@@ -37,29 +37,28 @@
           <form method="post" action="{% url 'content:buy_module' course.slug %}">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
+            <input type="hidden" name="payment_method" id="payment_method" value="">
 
             <div class="grid gap-3">
-              <button type="button" data-method="bkash" class="payment-method flex items-center gap-3 rounded-lg border p-3 text-sm hover:bg-slate-50">
-                <img src="/static/images/payments/bkash.svg" alt="bKash" class="h-6 w-6"> <span>বিকাশ (bKash)</span>
+              <button type="button" data-method="bkash" class="payment-method flex items-center gap-3 rounded-lg border pl-2 text-sm hover:bg-slate-50">
+                <img src="/static/images/payments/bkash.svg" alt="bKash" class="h-12 w-12"> <span>বিকাশ (bKash)</span>
               </button>
 
-              <button type="button" data-method="nagad" class="payment-method flex items-center gap-3 rounded-lg border p-3 text-sm hover:bg-slate-50">
-                <img src="/static/images/payments/nagad.svg" alt="Nagad" class="h-6 w-6"> <span>Nagad</span>
+              <button type="button" data-method="nagad" class="payment-method flex items-center gap-3 rounded-lg border pl-2 text-sm hover:bg-slate-50">
+                <img src="/static/images/payments/nagad.svg" alt="Nagad" class="h-12 w-12"> <span>Nagad</span>
               </button>
 
-              <button type="button" data-method="rocket" class="payment-method flex items-center gap-3 rounded-lg border p-3 text-sm hover:bg-slate-50">
-                <img src="/static/images/payments/rocket.svg" alt="Rocket" class="h-6 w-6"> <span>Rocket</span>
+              <button type="button" data-method="rocket" class="payment-method flex items-center gap-3 rounded-lg border pl-2 text-sm hover:bg-slate-50">
+                <img src="/static/images/payments/rocket.svg" alt="Rocket" class="h-12 w-12"> <span>Rocket</span>
               </button>
 
-              <button type="button" data-method="bank" class="payment-method flex items-center gap-3 rounded-lg border p-3 text-sm hover:bg-slate-50">
-                <img src="/static/images/payments/bank.svg" alt="Bank" class="h-6 w-6"> <span>Bank Transfer</span>
+              <button type="button" data-method="bank" class="payment-method flex items-center gap-3 rounded-lg border pl-2 text-sm hover:bg-slate-50">
+                <img src="/static/images/payments/bank.svg" alt="Bank" class="h-12 w-12"> <span>Bank Transfer</span>
               </button>
 
             </div>
 
-            <input type="hidden" name="payment_method" id="payment_method" value="">
-
-            <div id="payment_instructions" class="mt-4 text-sm text-slate-600"></div>
+           
 
             <!-- <div class="mt-6">
               <button id="payBtn" type="submit" class="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-white font-semibold">Pay ৳{{ course.price }}</button>
@@ -69,6 +68,30 @@
       </aside>
     </div>
   </div>
+
+  <div class="mt-5 mx-auto max-w-4xl px-4 sm:px-6 rounded-2xl border-slate-200 bg-white p-6 shadow-sm">
+        <h1 class="text-2xl font-bold text-slate-900">Payment Instructions</h1>
+        <p class="mt-2 text-sm text-slate-600">আপনি যে পেমেন্ট মেথডটি নির্বাচন করেছেন তার জন্য নিচের নির্দেশাবলী অনুসরণ করুন।</p>
+
+         <div class="mt-4">
+          {# store each DB instruction in a hidden container that JS can read #}
+          <div id="payment_instruction_data" class="hidden">
+            {% for instruction in payment_instructions %}
+              <div class="instruction-data" data-method="{{ instruction.payment_method_name }}">
+                <div class="mb-4 rounded-lg border border-slate-200 p-4">
+                  <h3 class="text-sm font-semibold text-slate-800">{{ instruction.get_payment_method_name_display }}</h3>
+                  <p class="mt-1 text-sm text-slate-600">{{ instruction.details }}</p>
+                  {% if instruction.image %}
+                    <img src="{{ instruction.image.url }}" alt="{{ instruction.get_payment_method_name_display }} instructions" class="mt-2 max-h-48 object-contain">
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+
+          <div id="payment_instructions" class="mt-4 text-sm text-slate-600"></div>
+
+        </div>
 </section>
 {% endblock %}
 
@@ -78,19 +101,26 @@
     const methods = document.querySelectorAll('.payment-method');
     const input = document.getElementById('payment_method');
     const instr = document.getElementById('payment_instructions');
+    const dataNodes = document.querySelectorAll('.instruction-data');
+    const instructions = {};
+
+    dataNodes.forEach(node => {
+      const method = node.dataset.method;
+      if (method) instructions[method] = node.innerHTML;
+    });
+
     let selected = null;
     methods.forEach(btn => {
       btn.addEventListener('click', function(){
-        methods.forEach(b=>b.classList.remove('ring-2','ring-emerald-300'));
+        methods.forEach(b => b.classList.remove('ring-2','ring-emerald-300'));
         btn.classList.add('ring-2','ring-emerald-300');
         selected = btn.getAttribute('data-method');
         input.value = selected;
-        switch(selected){
-          case 'bkash': instr.innerHTML = '<strong>বিকাশ</strong> পেমেন্ট: *247# → Send Money → 01911334810 (example)'; break;
-          case 'nagad': instr.innerHTML = '<strong>Nagad</strong> পেমেন্ট নির্দেশ: Agent বা USSD ব্যবহার করুন'; break;
-          case 'rocket': instr.innerHTML = '<strong>Rocket</strong> পেমেন্ট নির্দেশ: Agent/Bank app ব্যবহার করুন'; break;
-          case 'bank': instr.innerHTML = '<strong>Bank Transfer</strong> Use account details shown on confirmation.'; break;
-          default: instr.innerHTML = '';
+        const html = instructions[selected];
+        if (html) {
+          instr.innerHTML = html;
+        } else {
+          instr.innerHTML = '<div class="rounded-lg border border-slate-200 p-4">No payment instructions available for this method.</div>';
         }
       });
     });

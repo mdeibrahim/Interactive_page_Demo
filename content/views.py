@@ -115,11 +115,15 @@ def play_video(request, course_slug, module_slug, video_id):
             except Exception:
                 video_id = None
             if not video_id:
-                m = re.search(r'(?:v=|youtu\.be/|/embed/|/shorts/)([a-zA-Z0-9_-]{11})', url)
+                m = re.search(r'(?:v=|youtu\.be/|/embed/|/shorts/|/live/)([a-zA-Z0-9_-]{11})', url)
                 if m:
                     video_id = m.group(1)
             if video_id:
-                return {'type': 'youtube', 'embed_url': f'https://www.youtube.com/embed/{video_id}'}
+                return {
+                    'type': 'youtube',
+                    'video_id': video_id,
+                    'embed_url': f'https://www.youtube.com/embed/{video_id}'
+                }
             return {'type': 'link', 'url': url}
 
         if url.lower().endswith('.mp4'):
@@ -127,7 +131,8 @@ def play_video(request, course_slug, module_slug, video_id):
 
         return {'type': 'link', 'url': url}
 
-    embed = _get_embed(video.video_url)
+    # prefer explicit youtube_url field if present
+    embed = _get_embed(video.youtube_url or video.video_url)
 
     return render(request, 'content/video_player.html', {
         'course': course,
