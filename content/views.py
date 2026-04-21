@@ -22,6 +22,7 @@ from .models import (
     ModulePurchase,
     UserProfile,
     UserRole,
+    PaymentInstruction,
 )
 from .forms import (
     CourseChangeRequestForm,
@@ -462,8 +463,10 @@ def course_purchase(request, course_slug):
     course = get_object_or_404(Course, slug=course_slug)
 
     # Render a friendly purchase page. The actual purchase action posts to `buy_module`.
+    payment_instructions = PaymentInstruction.objects.order_by('payment_method_name').all()
     return render(request, 'content/course_purchase.html', {
         'course': course,
+        'payment_instructions': payment_instructions,
     })
 
 def _get_owned_course_ids(user):
