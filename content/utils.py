@@ -91,3 +91,40 @@ def send_verification_email(user, code: str) -> bool:
 def send_password_reset_email(user, token: str) -> bool:
     subject, text_body, html_body = render_password_reset_email(user, token)
     return send_email(subject, text_body, html_body, to_email=user.email)
+
+
+def render_payment_submission_email(user, course, amount, payment_method: str, transaction_id: str, note: str):
+        """Return (subject, text_body, html_body) for admin notification when a student submits payment details."""
+        site = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+        student_name = f"{getattr(user, 'first_name', '')} {getattr(user, 'last_name', '')}".strip() or user.get_username()
+        subject = f"Payment submission — {course.name} — {student_name}"
+
+        html_body = f"""
+        <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; color:#111827;">
+            <p>Admin,</p>
+            <p>The following payment details were submitted by a student on <strong>{site}</strong>:</p>
+            <ul>
+                <li><strong>Course:</strong> {course.name}</li>
+                <li><strong>Amount:</strong> ৳{amount}</li>
+                <li><strong>Payment method:</strong> {payment_method or 'N/A'}</li>
+                <li><strong>Transaction ID:</strong> {transaction_id}</li>
+                <li><strong>Student name:</strong> {student_name}</li>
+                <li><strong>Student email:</strong> {getattr(user, 'email', '')}</li>
+            </ul>
+            <p><strong>Phone (profile):</strong> {getattr(getattr(user, 'profile', None), 'phone_number', '')}</p>
+            <p><strong>Note:</strong> {note or '(none)'}</p>
+            <hr>
+            <p style="font-size:13px; color:#6b7280;">{site} — Teaching Platform</p>
+        </div>
+        """
+
+        text_body = strip_tags(html_body)
+        return subject, text_body, html_body
+
+
+def send_payment_submission_email(user, course, amount, payment_method: str, transaction_id: str, note: str) -> bool:
+        subject, text_body, html_body = render_payment_submission_email(user, course, amount, payment_method, transaction_id, note)
+        to_email = getattr(settings, 'SERVER_EMAIL', None) or getattr(settings, 'DEFAULT_FROM_EMAIL', None) or getattr(settings, 'EMAIL_HOST_USER', None)
+        if not to_email:
+                return False
+        return send_email(subject, text_body, html_body, to_email=to_email)

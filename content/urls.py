@@ -49,6 +49,7 @@ urlpatterns = [
     path('courses/<slug:course_slug>/buy/', views.buy_module, name='buy_module'),
     path('courses/<slug:course_slug>/start-purchase/', views.start_purchase, name='start_purchase'),
     path('courses/<slug:course_slug>/purchase/', views.course_purchase, name='course_purchase'),
+    path('courses/<slug:course_slug>/submit-payment/', views.submit_payment_details, name='submit_payment_details'),
 
     # ── Read API ────────────────────────────────────────────────
     path('api/v1/', include('content.api_urls')),

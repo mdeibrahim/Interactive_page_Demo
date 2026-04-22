@@ -469,6 +469,39 @@ def course_purchase(request, course_slug):
         'payment_instructions': payment_instructions,
     })
 
+
+@login_required
+@require_POST
+def submit_payment_details(request, course_slug):
+    """Accepts transaction_id, note and payment_method from student and emails admin."""
+    course = get_object_or_404(Course, slug=course_slug)
+    transaction_id = (request.POST.get('transaction_id') or '').strip()
+    note = (request.POST.get('note') or '').strip()
+    # prefer explicit posted payment_method (hidden/select), fallback to older field
+    payment_method = (request.POST.get('payment_method') or request.POST.get('payment_method_display') or '').strip()
+
+    if not transaction_id:
+        messages.error(request, 'Please provide a transaction ID.')
+        return redirect('content:course_purchase', course_slug=course.slug)
+
+    from .utils import send_payment_submission_email
+
+    sent = send_payment_submission_email(
+        user=request.user,
+        course=course,
+        amount=getattr(course, 'price', 0),
+        payment_method=payment_method,
+        transaction_id=transaction_id,
+        note=note,
+    )
+
+    if sent:
+        messages.success(request, 'Payment details submitted. Admin has been notified.')
+    else:
+        messages.error(request, 'Could not send notification email. Please contact support.')
+
+    return redirect('content:course_purchase', course_slug=course.slug)
+
 def _get_owned_course_ids(user):
     if not user.is_authenticated:
         return set()
