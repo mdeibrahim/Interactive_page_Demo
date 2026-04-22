@@ -91,6 +91,9 @@
                                     <h3 class="truncate text-sm font-semibold text-slate-800 sm:text-base">{{ module.title }}</h3>
                                     <div class="mt-1 flex flex-wrap gap-3 text-xs text-slate-500">
                                         <span><i class="fa-solid fa-video"></i> {{ module.course_contents.count }} videos</span>
+                                        {% if module.quiz_count %}
+                                        <span><i class="fa-solid fa-question"></i> {{ module.quiz_count }} quizzes</span>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>

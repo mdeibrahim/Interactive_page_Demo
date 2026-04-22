@@ -63,6 +63,11 @@ def course_detail(request, course_slug):
     for m in modules:
         contents = list(m.course_contents.all())
         m.first_content = contents[0] if contents else None
+        # attach quiz count to avoid template relying on related manager in ambiguous contexts
+        try:
+            m.quiz_count = m.course_quizzes.count()
+        except Exception:
+            m.quiz_count = 0
 
     has_access = _has_module_access(request.user, course)
     related_courses = Course.objects.exclude(id=course.id).prefetch_related('modules')[:3]
@@ -132,8 +137,30 @@ def play_video(request, course_slug, module_slug, video_id):
 
         return {'type': 'link', 'url': url}
 
-    # prefer explicit youtube_url field if present
-    embed = _get_embed(video.youtube_url or video.video_url)
+    # prefer explicit youtube_url field, then URL field, then uploaded FileField
+    file_url = ''
+    try:
+        if getattr(video, 'video') and hasattr(video.video, 'url'):
+            file_url = video.video.url or ''
+    except Exception:
+        file_url = ''
+
+    # If a youtube/video URL (or uploaded mp4) exists, derive embed from it
+    if video.youtube_url or video.video_url or file_url:
+        embed = _get_embed(video.youtube_url or video.video_url or file_url)
+    else:
+        # fallback to image if present
+        img_url = ''
+        try:
+            if getattr(video, 'image') and hasattr(video.image, 'url'):
+                img_url = video.image.url or ''
+        except Exception:
+            img_url = ''
+
+        if img_url:
+            embed = {'type': 'image', 'url': img_url}
+        else:
+            embed = {'type': 'link', 'url': ''}
 
     return render(request, 'content/video_player.html', {
         'course': course,

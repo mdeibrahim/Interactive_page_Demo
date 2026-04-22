@@ -71,6 +71,10 @@
                                 <source src="{{ embed.url }}" type="video/mp4">
                                 আপনার ব্রাউজার ভিডিও ট্যাগ সমর্থন করে না।
                             </video>
+                            {% elif embed.type == 'image' %}
+                            <div class="w-full h-full flex items-center justify-center bg-black">
+                                <img src="{{ embed.url }}" alt="{{ video.title }}" class="max-h-full max-w-full object-contain" />
+                            </div>
                             {% else %}
                             <div class="flex h-64 items-center justify-center text-center text-slate-400">
                                 <a href="{{ embed.url }}" target="_blank" class="underline">Open video in new tab</a>
