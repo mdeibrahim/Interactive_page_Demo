@@ -208,3 +208,52 @@
     window.openInteractiveModal = openModal;
 
 })();
+
+// ── Student dashboard enhancements: animated progress bars + client-side filter
+(function () {
+    'use strict';
+
+    function animateProgressBars() {
+        document.querySelectorAll('.progress-fill').forEach(el => {
+            const target = parseInt(el.getAttribute('data-progress') || '0', 10);
+            let cur = 0;
+            el.style.width = '0%';
+            const step = Math.max(1, Math.round(target / 30));
+            const id = setInterval(() => {
+                cur = Math.min(target, cur + step);
+                el.style.width = cur + '%';
+                if (cur >= target) clearInterval(id);
+            }, 12);
+        });
+    }
+
+    function attachDashboardFilter() {
+        const input = document.getElementById('dashboardFilter');
+        const countEl = document.getElementById('dashboardCount');
+        if (!input) return;
+
+        input.addEventListener('input', function () {
+            const q = this.value.trim().toLowerCase();
+            const cards = Array.from(document.querySelectorAll('.dashboard-card'));
+            let visible = 0;
+            cards.forEach(card => {
+                const title = card.getAttribute('data-title') || '';
+                const ok = !q || title.indexOf(q) !== -1;
+                card.style.display = ok ? '' : 'none';
+                if (ok) visible++;
+            });
+            if (countEl) countEl.textContent = visible;
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            animateProgressBars();
+            attachDashboardFilter();
+        });
+    } else {
+        animateProgressBars();
+        attachDashboardFilter();
+    }
+
+})();

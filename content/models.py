@@ -34,7 +34,7 @@ class UserProfile(models.Model):
 class EmailOTP(models.Model):
     """One-time code for email verification after signup."""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_otps')
-    code = models.CharField(max_length=8)
+    code = models.CharField(max_length=6)
     is_used = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()

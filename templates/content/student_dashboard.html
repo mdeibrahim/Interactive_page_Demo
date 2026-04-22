@@ -12,10 +12,14 @@
 
         <div class="mt-8">
             <h2 class="text-2xl font-bold text-slate-900">My Purchased Courses</h2>
+            <div class="mt-3 flex items-center justify-between gap-3">
+                <input id="dashboardFilter" type="search" placeholder="Search courses..." class="w-full max-w-sm rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none" />
+                <div class="text-sm text-slate-500">Showing <span id="dashboardCount">{{ purchased_cards|length }}</span> courses</div>
+            </div>
             {% if purchased_cards %}
             <div class="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {% for card in purchased_cards %}
-                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dashboard-card" data-title="{{ card.purchase.course.name|lower }}">
              <h3 class="mt-1 text-xl font-bold text-slate-900">{{ card.purchase.course.name }}</h3>
                     <p class="mt-2 text-sm text-slate-600">Purchased: {{ card.purchase.purchased_at|date:"M d, Y" }}</p>
 
@@ -25,7 +29,7 @@
                             <span>{{ card.progress }}%</span>
                         </div>
                         <div class="h-2 rounded-full bg-slate-200">
-                            <div class="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600" style="width: {{ card.progress }}%"></div>
+                            <div class="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 progress-fill" data-progress="{{ card.progress }}" style="width: 0%"></div>
                         </div>
                     </div>
 
