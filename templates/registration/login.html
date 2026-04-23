@@ -69,6 +69,8 @@
                 <span class="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2.5 font-semibold text-white transition group-hover:from-blue-700 group-hover:to-cyan-700">Continue as Student <i class="fa-solid fa-arrow-right"></i></span>
             </a>
 
+            <!-- {# Teacher login section is temporarily disabled. #}
+            {#
             <a href="{% url 'content:teacher_login' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}" class="choice-card group rounded-3xl border border-white/70 bg-white/80 p-6 shadow-lg shadow-slate-900/5 backdrop-blur transition duration-300 hover:-translate-y-1 hover:shadow-xl">
                 <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/15 to-teal-500/20 text-xl text-emerald-700 ring-1 ring-emerald-200">
                     <i class="fa-solid fa-chalkboard-user"></i>
@@ -83,7 +85,7 @@
             </a>
         </div>
 
-        <p class="mt-7 text-center text-sm text-slate-600">No account yet? <a href="{% url 'content:signup' %}" class="font-semibold text-rose-700 transition hover:text-rose-900">Create one now</a></p>
+        <p class="mt-7 text-center text-sm text-slate-600">No account yet? <a href="{% url 'content:signup' %}" class="font-semibold text-rose-700 transition hover:text-rose-900">Create one now</a></p> -->
     </div>
 </section>
 {% endblock %}

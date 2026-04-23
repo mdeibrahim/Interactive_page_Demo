@@ -7,8 +7,8 @@ app_name = 'content'
 urlpatterns = [
     # ── Page views ──────────────────────────────────────────────
     path('', views.home, name='home'),
-    path('accounts/login/', views.login_selector, name='login'),
-    path('accounts/signup/', views.signup_selector, name='signup'),
+    path('accounts/login/', views.student_login, name='login'),
+    path('accounts/signup/', views.student_signup, name='signup'),
     path('accounts/login/student/', views.student_login, name='student_login'),
     path('accounts/login/teacher/', views.teacher_login, name='teacher_login'),
     path('accounts/otp-verify/', views.otp_verify, name='otp_verify'),
@@ -50,6 +50,12 @@ urlpatterns = [
     path('courses/<slug:course_slug>/start-purchase/', views.start_purchase, name='start_purchase'),
     path('courses/<slug:course_slug>/purchase/', views.course_purchase, name='course_purchase'),
     path('courses/<slug:course_slug>/submit-payment/', views.submit_payment_details, name='submit_payment_details'),
+
+    # Interactive content (module based)
+    path('api/content/<int:content_id>/', views.get_interactive_content, name='get_interactive_content'),
+    path('api/module/<int:module_id>/ic/create/', views.api_ic_create, name='api_ic_create'),
+    path('api/ic/<int:ic_id>/update/', views.api_ic_update, name='api_ic_update'),
+    path('api/ic/<int:ic_id>/delete/', views.api_ic_delete, name='api_ic_delete'),
 
     # ── Read API ────────────────────────────────────────────────
     path('api/v1/', include('content.api_urls')),

@@ -1,16 +1,20 @@
 import uuid
+import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Avg, Count, OuterRef, Q, Subquery, Prefetch
 from django.contrib import messages
 from django.contrib.auth import login
 from django.conf import settings
+from django.http import JsonResponse
 from .utils import send_verification_email
 from django.core.cache import cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods
 from .models import (
     ApprovalStatus,
     CourseCertificate,
@@ -19,6 +23,7 @@ from .models import (
     CourseContent,
     Course,
     Module,
+    InteractiveContent,
     ModulePurchase,
     UserProfile,
     UserRole,
@@ -746,3 +751,165 @@ def otp_resend(request):
     else:
         messages.info(request, f'OTP for verification: {code}')
     return redirect('content:otp_verify')
+
+
+def get_interactive_content(request, content_id):
+    """Return interactive content payload for modal rendering."""
+    content = get_object_or_404(InteractiveContent, id=content_id)
+
+    if content.module and not _has_module_access(request.user, content.module.course):
+        return JsonResponse({'detail': 'Access denied.'}, status=403)
+
+    image_url = content.image.url if content.image else ''
+    audio_url = content.audio.url if content.audio else ''
+    video_url = content.video.url if content.video else ''
+
+    return JsonResponse({
+        'id': content.id,
+        'module_id': content.module_id,
+        'title': content.title,
+        'content_type': content.content_type,
+        'text_content': content.text_content or '',
+        'image_url': image_url,
+        'audio_url': audio_url,
+        'video_url': video_url,
+        'youtube_url': content.youtube_url or '',
+        'youtube_embed_url': content.get_youtube_embed_url(),
+        'created_at': content.created_at.isoformat(),
+    })
+
+
+def _serialize_ic(ic):
+    return {
+        'id': ic.id,
+        'module_id': ic.module_id,
+        'title': ic.title,
+        'content_type': ic.content_type,
+        'text_content': ic.text_content or '',
+        'youtube_url': ic.youtube_url or '',
+        'youtube_embed_url': ic.get_youtube_embed_url(),
+        'image_url': ic.image.url if ic.image else '',
+        'audio_url': ic.audio.url if ic.audio else '',
+        'video_url': ic.video.url if ic.video else '',
+        'created_at': ic.created_at.isoformat(),
+    }
+
+
+def _parse_api_payload(request):
+    if request.content_type and 'multipart' in request.content_type:
+        return request.POST, request.FILES, None
+    try:
+        data = json.loads(request.body or '{}')
+        return data, {}, None
+    except Exception:
+        return None, None, JsonResponse({'ok': False, 'error': 'Invalid body'}, status=400)
+
+
+@csrf_exempt
+@login_required
+@require_http_methods(["POST"])
+def api_ic_create(request, module_id):
+    """Create a new InteractiveContent item under a module."""
+    module = get_object_or_404(Module.objects.select_related('course'), id=module_id)
+
+    data, files, err = _parse_api_payload(request)
+    if err:
+        return err
+
+    if not _is_teacher(request.user):
+        return JsonResponse({'ok': False, 'error': 'Only teachers can create media.'}, status=403)
+
+    if module.course.teacher_id != request.user.id and not request.user.is_staff:
+        return JsonResponse({'ok': False, 'error': 'You cannot edit this module.'}, status=403)
+
+    content_type = str(data.get('content_type', 'text')).strip()
+    title = str(data.get('title', 'Untitled')).strip() or 'Untitled'
+
+    allowed_types = {choice[0] for choice in InteractiveContent._meta.get_field('content_type').choices}
+    if content_type not in allowed_types:
+        return JsonResponse({'ok': False, 'error': 'Invalid content type.'}, status=400)
+
+    ic = InteractiveContent(module=module, content_type=content_type, title=title)
+
+    if content_type == 'text':
+        ic.text_content = data.get('text_content', '')
+    elif content_type == 'image' and 'image' in files:
+        ic.image = files['image']
+    elif content_type == 'audio' and 'audio' in files:
+        ic.audio = files['audio']
+    elif content_type == 'video' and 'video' in files:
+        ic.video = files['video']
+    elif content_type == 'youtube':
+        ic.youtube_url = data.get('youtube_url', '')
+
+    ic.save()
+    return JsonResponse({'ok': True, 'ic': _serialize_ic(ic)}, status=201)
+
+
+@csrf_exempt
+@login_required
+@require_http_methods(["POST"])
+def api_ic_update(request, ic_id):
+    """Update an existing InteractiveContent item."""
+    ic = get_object_or_404(InteractiveContent.objects.select_related('module__course'), id=ic_id)
+
+    data, files, err = _parse_api_payload(request)
+    if err:
+        return err
+
+    if not _is_teacher(request.user):
+        return JsonResponse({'ok': False, 'error': 'Only teachers can update media.'}, status=403)
+
+    if ic.module and ic.module.course.teacher_id != request.user.id and not request.user.is_staff:
+        return JsonResponse({'ok': False, 'error': 'You cannot edit this media item.'}, status=403)
+
+    if 'content_type' in data:
+        new_type = str(data['content_type']).strip()
+        allowed_types = {choice[0] for choice in InteractiveContent._meta.get_field('content_type').choices}
+        if new_type not in allowed_types:
+            return JsonResponse({'ok': False, 'error': 'Invalid content type.'}, status=400)
+        ic.content_type = new_type
+
+    if 'title' in data:
+        ic.title = str(data['title']).strip() or ic.title
+
+    if 'text_content' in data:
+        ic.text_content = data['text_content']
+    if 'youtube_url' in data:
+        ic.youtube_url = data['youtube_url']
+
+    if 'image' in files:
+        ic.image = files['image']
+    if 'audio' in files:
+        ic.audio = files['audio']
+    if 'video' in files:
+        ic.video = files['video']
+
+    clear_field = str(data.get('clear_field', '')).strip().lower()
+    if clear_field in {'image', 'audio', 'video'}:
+        getattr(ic, clear_field).delete(save=False)
+        setattr(ic, clear_field, None)
+
+    ic.save()
+
+    return JsonResponse({'ok': True, 'ic': _serialize_ic(ic)})
+
+
+@csrf_exempt
+@login_required
+@require_http_methods(["DELETE", "POST"])
+def api_ic_delete(request, ic_id):
+    """Delete an InteractiveContent item."""
+    ic = get_object_or_404(InteractiveContent.objects.select_related('module__course'), id=ic_id)
+
+    if not _is_teacher(request.user):
+        return JsonResponse({'ok': False, 'error': 'Only teachers can delete media.'}, status=403)
+
+    if ic.module and ic.module.course.teacher_id != request.user.id and not request.user.is_staff:
+        return JsonResponse({'ok': False, 'error': 'You cannot delete this media item.'}, status=403)
+
+    for file_field in (ic.image, ic.audio, ic.video):
+        if file_field:
+            file_field.delete(save=False)
+    ic.delete()
+    return JsonResponse({'ok': True})

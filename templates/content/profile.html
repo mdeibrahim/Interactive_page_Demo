@@ -73,6 +73,8 @@
                     </div>
                 </div>
                 {% else %}
+                {# Teacher profile fields are temporarily disabled. #}
+                {#
                 <div class="grid gap-4 sm:grid-cols-3">
                     <div>
                         <label for="id_teacher_institution" class="mb-1.5 block text-sm font-semibold text-slate-700">Institution</label>
@@ -90,6 +92,7 @@
                         {% if form.teacher_experience_years.errors %}<p class="mt-1 text-sm text-rose-600">{{ form.teacher_experience_years.errors|striptags }}</p>{% endif %}
                     </div>
                 </div>
+                #}
                 {% endif %}
 
                 <div class="flex flex-wrap items-center gap-3">
