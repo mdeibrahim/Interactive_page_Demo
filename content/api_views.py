@@ -13,7 +13,7 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
-from .api_permissions import IsTeacher, IsStudent
+from .api_permissions import IsStudent
 from .api_serializers import (
     DetailSummarySerializer,
     UserRegisterSerializer,
@@ -31,11 +31,16 @@ User = get_user_model()
 
 
 def _get_user_role(user):
-    inferred_teacher = user.is_staff or user.teaching_courses.exists()
     profile, _ = UserProfile.objects.get_or_create(
         user=user,
-        defaults={'role': UserRole.TEACHER if inferred_teacher else UserRole.STUDENT},
+        defaults={'role': UserRole.STUDENT},
     )
+    if profile.role != UserRole.STUDENT:
+        profile.role = UserRole.STUDENT
+        profile.teacher_institution = ''
+        profile.teacher_subject = ''
+        profile.teacher_experience_years = None
+        profile.save(update_fields=['role', 'teacher_institution', 'teacher_subject', 'teacher_experience_years'])
     return profile.role
 
 
@@ -276,4 +281,3 @@ class MyModulesAPIView(APIView):
             for p in purchases
         ]
         return Response(data)
-

@@ -6,7 +6,6 @@ from content.models import (
     Module,
     ModulePurchase,
     CourseCertificate,
-    CourseChangeRequest,
 )
 
 

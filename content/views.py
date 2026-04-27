@@ -4,6 +4,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Avg, Count, OuterRef, Q, Subquery, Prefetch
 from django.contrib import messages
 from django.contrib.auth import login
+from django.contrib.admin.views.decorators import staff_member_required
 from django.conf import settings
 from django.http import JsonResponse
 from .utils import send_verification_email
@@ -12,30 +13,25 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate
 from django.utils import timezone
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_http_methods
 from .models import (
-    ApprovalStatus,
     CourseCertificate,
-    CourseChangeRequest,
-    CourseQuiz,
     CourseContent,
     Course,
     Module,
-    InteractiveContent,
+    ModuleAccordionSection,
     ModulePurchase,
     UserProfile,
     UserRole,
     PaymentInstruction,
 )
 from .forms import (
-    CourseChangeRequestForm,
     EmailLoginForm,
-    NewCourseAddRequestForm,
     ProfileUpdateForm,
     StudentSignupForm,
-    TeacherSignupForm,
 )
 
 
@@ -90,6 +86,50 @@ def course_detail(request, course_slug):
         'related_courses': related_courses,
         'owned_course_ids': owned_course_ids,
         'first_content': first_content,
+    })
+
+
+def module_detail(request, course_slug, module_slug):
+    course = get_object_or_404(Course, slug=course_slug)
+    module = get_object_or_404(
+        Module.objects.prefetch_related(
+            Prefetch('course_contents', queryset=CourseContent.objects.order_by('order', 'created_at')),
+            Prefetch('accordion_sections', queryset=ModuleAccordionSection.objects.order_by('order', 'created_at')),
+        ),
+        course=course,
+        slug=module_slug,
+    )
+    first_content = module.course_contents.order_by('order', 'created_at').first()
+    if first_content:
+        return redirect('content:play_video', course.slug, module.slug, first_content.id)
+    return redirect('content:course_detail', course.slug)
+
+
+@staff_member_required
+def module_editor(request, course_slug, module_slug):
+    course = get_object_or_404(Course, slug=course_slug)
+    module = get_object_or_404(
+        Module.objects.prefetch_related(
+            Prefetch('course_contents', queryset=CourseContent.objects.order_by('order', 'created_at')),
+            Prefetch('accordion_sections', queryset=ModuleAccordionSection.objects.order_by('order', 'created_at')),
+        ),
+        course=course,
+        slug=module_slug,
+    )
+    interactive_contents = list(module.course_contents.all())
+    accordion_sections = list(module.accordion_sections.all())
+    first_content = module.course_contents.order_by('order', 'created_at').first()
+    return render(request, 'content/subject_editor.html', {
+        'course': course,
+        'module': module,
+        'interactive_contents': interactive_contents,
+        'accordion_sections': accordion_sections,
+        'interactive_contents_payload': [_serialize_ic(ic) for ic in interactive_contents],
+        'accordion_sections_payload': [_serialize_accordion(section) for section in accordion_sections],
+        'preview_url': (
+            reverse('content:play_video', args=[course.slug, module.slug, first_content.id])
+            if first_content else reverse('content:course_detail', args=[course.slug])
+        ),
     })
 
 
@@ -187,10 +227,9 @@ def my_modules(request):
 
 @login_required
 def profile_page(request):
-    inferred_teacher = request.user.is_staff or request.user.teaching_courses.exists()
     profile, _ = UserProfile.objects.get_or_create(
         user=request.user,
-        defaults={'role': UserRole.TEACHER if inferred_teacher else UserRole.STUDENT},
+        defaults={'role': UserRole.STUDENT},
     )
     form = ProfileUpdateForm(request.POST or None, request.FILES or None, user=request.user, profile=profile)
     if request.method == 'POST' and form.is_valid():
@@ -201,158 +240,7 @@ def profile_page(request):
 
 
 @login_required
-def teacher_dashboard(request):
-    if not _is_teacher(request.user):
-        messages.error(request, 'Only teachers can access this dashboard.')
-        return redirect('content:student_dashboard')
-
-    courses = Course.objects.filter(teacher=request.user).prefetch_related('modules')
-    course_cards = []
-    total_students = 0
-    total_courses = courses.count()
-
-    pending_requests = CourseChangeRequest.objects.filter(teacher=request.user, status=ApprovalStatus.PENDING).count()
-    recent_requests = CourseChangeRequest.objects.filter(teacher=request.user).select_related('course')[:8]
-    add_course_form = NewCourseAddRequestForm()
-
-    for course in courses:
-        purchases = course.purchases.filter(is_purchased=True).select_related('user')
-        student_count = purchases.count()
-        total_students += student_count
-        total_modules = course.modules.count()
-
-        course_cards.append({
-            'course': course,
-            'student_count': student_count,
-            'total_subjects': total_modules,
-            'content_count': CourseContent.objects.filter(module__course=course).count(),
-            'quiz_count': CourseQuiz.objects.filter(module__course=course).count(),
-            'avg_progress': 0,
-        })
-
-    return render(request, 'content/teacher_dashboard.html', {
-        'course_cards': course_cards,
-        'total_students': total_students,
-        'total_courses': total_courses,
-        'pending_requests': pending_requests,
-        'recent_requests': recent_requests,
-        'add_course_form': add_course_form,
-    })
-
-
-@login_required
-def teacher_course_detail(request, course_id):
-    if not _is_teacher(request.user):
-        messages.error(request, 'Only teachers can access this page.')
-        return redirect('content:student_dashboard')
-
-    course = get_object_or_404(Course.objects.select_related('teacher'), id=course_id, teacher=request.user)
-    purchases = course.purchases.filter(is_purchased=True).select_related('user').order_by('-purchased_at')
-    students = []
-    for purchase in purchases:
-        profile, _ = UserProfile.objects.get_or_create(
-            user=purchase.user,
-            defaults={'role': UserRole.TEACHER if purchase.user.is_staff else UserRole.STUDENT},
-        )
-        students.append({
-            'user': purchase.user,
-            'phone_number': profile.phone_number,
-            'purchased_at': purchase.purchased_at,
-            'progress': 0,
-        })
-
-    contents = CourseContent.objects.filter(module__course=course).select_related('module')
-    quizzes = CourseQuiz.objects.filter(module__course=course).select_related('module')
-    form = CourseChangeRequestForm()
-
-    return render(request, 'content/teacher_course_detail.html', {
-        'course': course,
-        'students': students,
-        'contents': contents,
-        'quizzes': quizzes,
-        'change_request_form': form,
-        'change_requests': course.change_requests.select_related('teacher').all()[:10],
-    })
-
-
-@login_required
-@require_POST
-def submit_course_change_request(request, course_id):
-    if not _is_teacher(request.user):
-        messages.error(request, 'Only teachers can submit requests.')
-        return redirect('content:student_dashboard')
-
-    course = get_object_or_404(Course, id=course_id, teacher=request.user)
-    form = CourseChangeRequestForm(request.POST)
-    if form.is_valid():
-        change = form.save(commit=False)
-        change.teacher = request.user
-        change.course = course
-        change.status = ApprovalStatus.PENDING
-        change.save()
-        messages.success(request, 'Change request submitted for admin approval.')
-    else:
-        messages.error(request, 'Could not submit request. Please check the form fields.')
-    return redirect('content:teacher_course_detail', course_id=course.id)
-
-
-@login_required
-@require_POST
-def submit_new_course_request(request):
-    if not _is_teacher(request.user):
-        messages.error(request, 'Only teachers can submit requests.')
-        return redirect('content:student_dashboard')
-
-    form = NewCourseAddRequestForm(request.POST)
-    if form.is_valid():
-        CourseChangeRequest.objects.create(
-            teacher=request.user,
-            request_type='add',
-            course=None,
-            requested_category=form.cleaned_data['requested_category'],
-            requested_course_name=form.cleaned_data['requested_course_name'].strip(),
-            requested_price=form.cleaned_data['requested_price'],
-            summary=f"New course request: {form.cleaned_data['requested_course_name'].strip()}",
-            details=(form.cleaned_data.get('details') or '').strip(),
-            status=ApprovalStatus.PENDING,
-        )
-        messages.success(request, 'New course add request submitted for admin approval.')
-    else:
-        messages.error(request, 'Could not submit new course request. Please check the fields.')
-    return redirect('content:teacher_dashboard')
-
-
-@login_required
-def add_course_request(request):
-    """Show a full-page form for teachers to request a new course."""
-    if not _is_teacher(request.user):
-        messages.error(request, 'Only teachers can submit requests.')
-        return redirect('content:student_dashboard')
-
-    form = NewCourseAddRequestForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
-        CourseChangeRequest.objects.create(
-            teacher=request.user,
-            request_type='add',
-            course=None,
-            requested_category=form.cleaned_data['requested_category'],
-            requested_course_name=form.cleaned_data['requested_course_name'].strip(),
-            requested_price=form.cleaned_data['requested_price'],
-            summary=f"New course request: {form.cleaned_data['requested_course_name'].strip()}",
-            details=(form.cleaned_data.get('details') or '').strip(),
-            status=ApprovalStatus.PENDING,
-        )
-        messages.success(request, 'New course add request submitted for admin approval.')
-        return redirect('content:teacher_dashboard')
-
-    return render(request, 'content/add_course_request.html', {'form': form})
-
-
-@login_required
 def student_dashboard(request):
-    if _is_teacher(request.user):
-        return redirect('content:teacher_dashboard')
-
     purchases = ModulePurchase.objects.filter(
         user=request.user,
         is_purchased=True,
@@ -416,19 +304,11 @@ def signup_selector(request):
 
 
 def student_login(request):
-    return _role_login(request, role=UserRole.STUDENT, template_name='registration/student_login.html')
-
-
-def teacher_login(request):
-    return _role_login(request, role=UserRole.TEACHER, template_name='registration/teacher_login.html')
+    return _role_login(request, template_name='registration/student_login.html')
 
 
 def student_signup(request):
-    return _role_signup(request, role=UserRole.STUDENT, template_name='registration/student_signup.html')
-
-
-def teacher_signup(request):
-    return _role_signup(request, role=UserRole.TEACHER, template_name='registration/teacher_signup.html')
+    return _role_signup(request, template_name='registration/student_signup.html')
 
 
 def signup(request):
@@ -557,21 +437,11 @@ def _has_module_access(user, course):
         is_purchased=True,
     ).exists()
 
-def _is_teacher(user):
-    if not user.is_authenticated:
-        return False
-    inferred_teacher = user.is_staff or user.teaching_courses.exists()
-    profile, _ = UserProfile.objects.get_or_create(
-        user=user,
-        defaults={'role': UserRole.TEACHER if inferred_teacher else UserRole.STUDENT},
-    )
-    return profile.role == UserRole.TEACHER
-
 def _generate_certificate_code():
     return f"CERT-{uuid.uuid4().hex[:12].upper()}"
 
 
-def _role_login(request, role, template_name):
+def _role_login(request, template_name):
     if request.user.is_authenticated:
         return redirect('content:home')
 
@@ -597,33 +467,34 @@ def _role_login(request, role, template_name):
 
         profile, _ = UserProfile.objects.get_or_create(
             user=user,
-            defaults={'role': role},
+            defaults={'role': UserRole.STUDENT},
         )
 
-        if profile.role != role:
-            messages.error(request, f'This account is registered as {profile.role}. Please use the correct login page.')
-        else:
-            login(request, user)
-            messages.success(request, f'Welcome back, {user.username}!')
-            next_url = request.POST.get('next') or request.GET.get('next')
-            if next_url:
-                return redirect(next_url)
-            if role == UserRole.TEACHER:
-                return redirect('content:teacher_dashboard')
-            return redirect('content:student_dashboard')
+        if profile.role != UserRole.STUDENT:
+            profile.role = UserRole.STUDENT
+            profile.teacher_institution = ''
+            profile.teacher_subject = ''
+            profile.teacher_experience_years = None
+            profile.save(update_fields=['role', 'teacher_institution', 'teacher_subject', 'teacher_experience_years'])
+
+        login(request, user)
+        messages.success(request, f'Welcome back, {user.username}!')
+        next_url = request.POST.get('next') or request.GET.get('next')
+        if next_url:
+            return redirect(next_url)
+        return redirect('content:student_dashboard')
 
     return render(request, template_name, {'form': form})
 
 
-def _role_signup(request, role, template_name):
+def _role_signup(request, template_name):
     if request.user.is_authenticated:
         return redirect('content:home')
 
-    form_class = StudentSignupForm if role == UserRole.STUDENT else TeacherSignupForm
-    form = form_class(request.POST or None)
+    form = StudentSignupForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         user = form.save()
-        form.save_profile(user=user, role=role)
+        form.save_profile(user=user, role=UserRole.STUDENT)
 
         # Create OTP and redirect to verification
         from django.utils import timezone
@@ -684,8 +555,12 @@ def otp_verify(request):
             request.session.pop('pending_otp_user', None)
             messages.success(request, 'Your account is verified and you are now logged in.')
             profile = UserProfile.objects.get_or_create(user=user)[0]
-            if profile.role == UserRole.TEACHER:
-                return redirect('content:teacher_dashboard')
+            if profile.role != UserRole.STUDENT:
+                profile.role = UserRole.STUDENT
+                profile.teacher_institution = ''
+                profile.teacher_subject = ''
+                profile.teacher_experience_years = None
+                profile.save(update_fields=['role', 'teacher_institution', 'teacher_subject', 'teacher_experience_years'])
             return redirect('content:student_dashboard')
         else:
             # increment attempt counter
@@ -753,16 +628,21 @@ def otp_resend(request):
     return redirect('content:otp_verify')
 
 
-def get_interactive_content(request, content_id):
-    """Return interactive content payload for modal rendering."""
-    content = get_object_or_404(InteractiveContent, id=content_id)
+def get_course_content(request, content_id):
+    """Return course content payload for modal rendering."""
+    content = get_object_or_404(CourseContent, id=content_id)
 
     if content.module and not _has_module_access(request.user, content.module.course):
         return JsonResponse({'detail': 'Access denied.'}, status=403)
 
     image_url = content.image.url if content.image else ''
     audio_url = content.audio.url if content.audio else ''
-    video_url = content.video.url if content.video else ''
+    video_url = ''
+    try:
+        video_url = content.video.url if content.video else (content.video_url or '')
+    except Exception:
+        video_url = content.video_url or ''
+    youtube_embed_url = content.get_youtube_embed_url() or _youtube_embed_from_url(video_url)
 
     return JsonResponse({
         'id': content.id,
@@ -774,12 +654,56 @@ def get_interactive_content(request, content_id):
         'audio_url': audio_url,
         'video_url': video_url,
         'youtube_url': content.youtube_url or '',
-        'youtube_embed_url': content.get_youtube_embed_url(),
+        'youtube_embed_url': youtube_embed_url,
         'created_at': content.created_at.isoformat(),
     })
 
 
+def get_interactive_content(request, content_id):
+    return get_course_content(request, content_id)
+
+
+def _youtube_embed_from_url(raw_url):
+    from urllib.parse import urlparse, parse_qs
+    import re
+
+    if not raw_url:
+        return ''
+
+    video_id = None
+    try:
+        parsed = urlparse(raw_url.strip())
+        host = (parsed.netloc or '').lower().replace('www.', '')
+        if host in ('youtube.com', 'm.youtube.com'):
+            if parsed.path == '/watch':
+                video_id = (parse_qs(parsed.query).get('v') or [None])[0]
+            elif parsed.path.startswith('/shorts/'):
+                video_id = parsed.path.split('/shorts/', 1)[1].split('/', 1)[0]
+            elif parsed.path.startswith('/live/'):
+                video_id = parsed.path.split('/live/', 1)[1].split('/', 1)[0]
+            elif parsed.path.startswith('/embed/'):
+                video_id = parsed.path.split('/embed/', 1)[1].split('/', 1)[0]
+        elif host == 'youtu.be':
+            video_id = parsed.path.lstrip('/').split('/', 1)[0]
+    except Exception:
+        video_id = None
+
+    if not video_id:
+        match = re.search(r'(?:v=|youtu\.be/|/embed/|/shorts/|/live/)([a-zA-Z0-9_-]{11})', raw_url)
+        if match:
+            video_id = match.group(1)
+
+    if video_id and re.fullmatch(r'[a-zA-Z0-9_-]{11}', video_id):
+        return f"https://www.youtube.com/embed/{video_id}"
+    return ''
+
+
 def _serialize_ic(ic):
+    video_url = ''
+    try:
+        video_url = ic.video.url if ic.video else (ic.video_url or '')
+    except Exception:
+        video_url = ic.video_url or ''
     return {
         'id': ic.id,
         'module_id': ic.module_id,
@@ -787,11 +711,23 @@ def _serialize_ic(ic):
         'content_type': ic.content_type,
         'text_content': ic.text_content or '',
         'youtube_url': ic.youtube_url or '',
-        'youtube_embed_url': ic.get_youtube_embed_url(),
+        'youtube_embed_url': ic.get_youtube_embed_url() or _youtube_embed_from_url(video_url),
         'image_url': ic.image.url if ic.image else '',
         'audio_url': ic.audio.url if ic.audio else '',
-        'video_url': ic.video.url if ic.video else '',
+        'video_url': video_url,
         'created_at': ic.created_at.isoformat(),
+    }
+
+
+def _serialize_accordion(section):
+    return {
+        'id': section.id,
+        'module_id': section.module_id,
+        'title': section.title,
+        'content': section.content or '',
+        'order': section.order,
+        'is_open_by_default': section.is_open_by_default,
+        'created_at': section.created_at.isoformat(),
     }
 
 
@@ -806,30 +742,50 @@ def _parse_api_payload(request):
 
 
 @csrf_exempt
-@login_required
+@staff_member_required
+@require_http_methods(["POST"])
+def api_subject_save(request, module_id):
+    module = get_object_or_404(Module, id=module_id)
+    data, _, error = _parse_api_payload(request)
+    if error:
+        return error
+
+    module.title = (data.get('title') or module.title).strip() or module.title
+    module.body_content = data.get('body_content', module.body_content or '')
+    module.save(update_fields=['title', 'body_content', 'updated_at'])
+
+    return JsonResponse({
+        'ok': True,
+        'module': {
+            'id': module.id,
+            'title': module.title,
+            'body_content': module.body_content,
+            'updated_at': module.updated_at.isoformat() if module.updated_at else '',
+        }
+    })
+
+
+@csrf_exempt
+@staff_member_required
 @require_http_methods(["POST"])
 def api_ic_create(request, module_id):
-    """Create a new InteractiveContent item under a module."""
-    module = get_object_or_404(Module.objects.select_related('course'), id=module_id)
+    """Create a new InteractiveContent item"""
+    module = get_object_or_404(Module, id=module_id)
+    # Handle multipart (file uploads) or JSON
+    if request.content_type and 'multipart' in request.content_type:
+        data = request.POST
+        files = request.FILES
+    else:
+        try:
+            data = json.loads(request.body)
+        except Exception:
+            return JsonResponse({'error': 'Invalid body'}, status=400)
+        files = {}
 
-    data, files, err = _parse_api_payload(request)
-    if err:
-        return err
+    content_type = data.get('content_type', 'text')
+    title = data.get('title', 'Untitled')
 
-    if not _is_teacher(request.user):
-        return JsonResponse({'ok': False, 'error': 'Only teachers can create media.'}, status=403)
-
-    if module.course.teacher_id != request.user.id and not request.user.is_staff:
-        return JsonResponse({'ok': False, 'error': 'You cannot edit this module.'}, status=403)
-
-    content_type = str(data.get('content_type', 'text')).strip()
-    title = str(data.get('title', 'Untitled')).strip() or 'Untitled'
-
-    allowed_types = {choice[0] for choice in InteractiveContent._meta.get_field('content_type').choices}
-    if content_type not in allowed_types:
-        return JsonResponse({'ok': False, 'error': 'Invalid content type.'}, status=400)
-
-    ic = InteractiveContent(module=module, content_type=content_type, title=title)
+    ic = CourseContent(module=module, content_type=content_type, title=title)
 
     if content_type == 'text':
         ic.text_content = data.get('text_content', '')
@@ -841,75 +797,101 @@ def api_ic_create(request, module_id):
         ic.video = files['video']
     elif content_type == 'youtube':
         ic.youtube_url = data.get('youtube_url', '')
-
     ic.save()
+
     return JsonResponse({'ok': True, 'ic': _serialize_ic(ic)}, status=201)
 
 
 @csrf_exempt
-@login_required
+@staff_member_required
 @require_http_methods(["POST"])
 def api_ic_update(request, ic_id):
-    """Update an existing InteractiveContent item."""
-    ic = get_object_or_404(InteractiveContent.objects.select_related('module__course'), id=ic_id)
+    """Update an existing InteractiveContent item"""
+    ic = get_object_or_404(CourseContent, id=ic_id)
 
-    data, files, err = _parse_api_payload(request)
-    if err:
-        return err
-
-    if not _is_teacher(request.user):
-        return JsonResponse({'ok': False, 'error': 'Only teachers can update media.'}, status=403)
-
-    if ic.module and ic.module.course.teacher_id != request.user.id and not request.user.is_staff:
-        return JsonResponse({'ok': False, 'error': 'You cannot edit this media item.'}, status=403)
+    if request.content_type and 'multipart' in request.content_type:
+        data = request.POST
+        files = request.FILES
+    else:
+        try:
+            data = json.loads(request.body)
+        except Exception:
+            return JsonResponse({'error': 'Invalid body'}, status=400)
+        files = {}
 
     if 'content_type' in data:
-        new_type = str(data['content_type']).strip()
-        allowed_types = {choice[0] for choice in InteractiveContent._meta.get_field('content_type').choices}
-        if new_type not in allowed_types:
-            return JsonResponse({'ok': False, 'error': 'Invalid content type.'}, status=400)
-        ic.content_type = new_type
-
+        ic.content_type = data['content_type']
     if 'title' in data:
-        ic.title = str(data['title']).strip() or ic.title
-
+        ic.title = data['title']
     if 'text_content' in data:
         ic.text_content = data['text_content']
     if 'youtube_url' in data:
         ic.youtube_url = data['youtube_url']
-
     if 'image' in files:
         ic.image = files['image']
     if 'audio' in files:
         ic.audio = files['audio']
     if 'video' in files:
         ic.video = files['video']
-
-    clear_field = str(data.get('clear_field', '')).strip().lower()
-    if clear_field in {'image', 'audio', 'video'}:
-        getattr(ic, clear_field).delete(save=False)
-        setattr(ic, clear_field, None)
-
     ic.save()
 
     return JsonResponse({'ok': True, 'ic': _serialize_ic(ic)})
 
 
 @csrf_exempt
-@login_required
+@staff_member_required
 @require_http_methods(["DELETE", "POST"])
 def api_ic_delete(request, ic_id):
-    """Delete an InteractiveContent item."""
-    ic = get_object_or_404(InteractiveContent.objects.select_related('module__course'), id=ic_id)
-
-    if not _is_teacher(request.user):
-        return JsonResponse({'ok': False, 'error': 'Only teachers can delete media.'}, status=403)
-
-    if ic.module and ic.module.course.teacher_id != request.user.id and not request.user.is_staff:
-        return JsonResponse({'ok': False, 'error': 'You cannot delete this media item.'}, status=403)
-
-    for file_field in (ic.image, ic.audio, ic.video):
-        if file_field:
-            file_field.delete(save=False)
+    """Delete an InteractiveContent item"""
+    ic = get_object_or_404(CourseContent, id=ic_id)
     ic.delete()
+    return JsonResponse({'ok': True})
+
+
+@csrf_exempt
+@staff_member_required
+@require_http_methods(["POST"])
+def api_accordion_create(request, module_id):
+    module = get_object_or_404(Module, id=module_id)
+    data, _, error = _parse_api_payload(request)
+    if error:
+        return error
+
+    section = ModuleAccordionSection.objects.create(
+        module=module,
+        title=(data.get('title') or 'Untitled Section').strip(),
+        content=data.get('content', ''),
+        order=int(data.get('order') or module.accordion_sections.count() + 1),
+        is_open_by_default=bool(data.get('is_open_by_default')),
+    )
+    return JsonResponse({'ok': True, 'section': _serialize_accordion(section)}, status=201)
+
+
+@csrf_exempt
+@staff_member_required
+@require_http_methods(["POST"])
+def api_accordion_update(request, section_id):
+    section = get_object_or_404(ModuleAccordionSection, id=section_id)
+    data, _, error = _parse_api_payload(request)
+    if error:
+        return error
+
+    if 'title' in data:
+        section.title = (data.get('title') or section.title).strip() or section.title
+    if 'content' in data:
+        section.content = data.get('content', '')
+    if 'order' in data and str(data.get('order')).strip():
+        section.order = int(data.get('order'))
+    if 'is_open_by_default' in data:
+        section.is_open_by_default = bool(data.get('is_open_by_default'))
+    section.save()
+    return JsonResponse({'ok': True, 'section': _serialize_accordion(section)})
+
+
+@csrf_exempt
+@staff_member_required
+@require_http_methods(["DELETE", "POST"])
+def api_accordion_delete(request, section_id):
+    section = get_object_or_404(ModuleAccordionSection, id=section_id)
+    section.delete()
     return JsonResponse({'ok': True})

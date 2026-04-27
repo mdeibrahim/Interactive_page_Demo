@@ -5,221 +5,286 @@
 {% block extrastyle %}
 <style>
     .dashboard-shell {
-        --bg-1: #f8fafc;
-        --bg-2: #ecfeff;
+        --bg-main: #f6f8fc;
+        --bg-accent: #e0f2fe;
         --card: #ffffff;
-        --border: #dbe5ef;
-        --text-1: #0f172a;
-        --text-2: #475569;
+        --border: #dbe4f0;
+        --text-main: #0f172a;
+        --text-soft: #475569;
         --muted: #64748b;
-        --brand: #0369a1;
-        --brand-soft: #e0f2fe;
-        --success: #166534;
-        --success-soft: #dcfce7;
-        --warn: #9a3412;
-        --warn-soft: #ffedd5;
+        --brand: #0f766e;
+        --brand-soft: #ccfbf1;
+        --info: #0f766e;
+        --info-soft: #ccfbf1;
+        --warn: #b45309;
+        --warn-soft: #fef3c7;
+        --danger: #b91c1c;
+        --danger-soft: #fee2e2;
 
-        background: radial-gradient(circle at top right, #dbeafe 0%, var(--bg-1) 42%),
-                    radial-gradient(circle at 14% 20%, var(--bg-2) 0%, transparent 38%);
+        background: radial-gradient(circle at top right, #dbeafe 0%, var(--bg-main) 48%),
+            radial-gradient(circle at left 18%, var(--bg-accent) 0%, transparent 32%);
         border: 1px solid var(--border);
-        border-radius: 18px;
+        border-radius: 20px;
         padding: 24px;
+    }
+
+    .dashboard-layout {
+        display: grid;
+        grid-template-columns: 250px minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+    }
+
+    .dashboard-sidebar,
+    .dashboard-panel,
+    .metric-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .dashboard-sidebar {
+        border-radius: 16px;
+        padding: 14px;
+        position: sticky;
+        top: 18px;
+    }
+
+    .sidebar-title,
+    .section-title {
+        margin: 0 0 12px;
+        color: var(--text-main);
+        font-size: 17px;
+        font-weight: 800;
+    }
+
+    .sidebar-note,
+    .section-note,
+    .metric-note,
+    .empty {
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .sidebar-list {
+        list-style: none;
+        margin: 14px 0 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+    }
+
+    .sidebar-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        color: var(--text-main);
+        text-decoration: none;
+        background: #f8fafc;
+        border: 1px solid transparent;
+    }
+
+    .sidebar-item:hover {
+        background: var(--brand-soft);
+        border-color: #99f6e4;
+        text-decoration: none;
+    }
+
+    .count-pill,
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 4px 9px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .count-pill {
+        color: var(--text-main);
+        background: #ffffff;
+        border: 1px solid var(--border);
+    }
+
+    .status-pill-success {
+        color: var(--info);
+        background: var(--info-soft);
+    }
+
+    .status-pill-warn {
+        color: var(--warn);
+        background: var(--warn-soft);
+    }
+
+    .status-pill-danger {
+        color: var(--danger);
+        background: var(--danger-soft);
+    }
+
+    .dashboard-main {
+        min-width: 0;
     }
 
     .hero {
         display: flex;
         justify-content: space-between;
         gap: 16px;
-        margin-bottom: 22px;
+        align-items: flex-start;
+        margin-bottom: 20px;
         flex-wrap: wrap;
     }
 
     .hero h1 {
         margin: 0;
+        color: var(--text-main);
         font-size: 30px;
-        font-weight: 800;
-        color: var(--text-1);
+        font-weight: 900;
     }
 
     .hero p {
         margin: 6px 0 0;
-        color: var(--text-2);
+        max-width: 700px;
+        color: var(--text-soft);
         font-size: 14px;
     }
 
-    .quick-actions {
+    .hero-actions {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        align-items: flex-start;
-        justify-content: flex-end;
     }
 
     .action-btn {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 6px;
         border-radius: 999px;
-        text-decoration: none;
-        padding: 9px 14px;
-        font-weight: 700;
+        padding: 10px 15px;
         font-size: 12px;
+        font-weight: 800;
+        text-decoration: none;
         border: 1px solid transparent;
         transition: transform .15s ease, box-shadow .15s ease;
     }
 
     .action-btn:hover {
         transform: translateY(-1px);
-        box-shadow: 0 8px 18px rgba(14, 116, 144, 0.15);
+        box-shadow: 0 10px 20px rgba(15, 118, 110, 0.15);
+        text-decoration: none;
     }
 
     .action-btn-primary {
-        background: linear-gradient(135deg, #0369a1, #0284c7);
-        color: #fff;
+        color: #ffffff;
+        background: linear-gradient(135deg, #0f766e, #0ea5a5);
     }
 
     .action-btn-soft {
+        color: #115e59;
         background: var(--brand-soft);
-        border-color: #bae6fd;
-        color: #0c4a6e;
+        border-color: #99f6e4;
     }
 
-    .kpi-grid {
+    .metrics-grid,
+    .panel-grid {
         display: grid;
+        gap: 14px;
+    }
+
+    .metrics-grid {
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 14px;
-        margin-bottom: 20px;
+        margin-bottom: 18px;
     }
 
-    .kpi-card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 14px;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-        transform: translateY(0);
-    }
-
-    .kpi-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
-        border-color: #93c5fd;
-    }
-
-    .kpi-label {
-        margin: 0;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        color: var(--muted);
-    }
-
-    .kpi-value {
-        margin: 8px 0 2px;
-        font-size: 32px;
-        line-height: 1;
-        font-weight: 800;
-        color: var(--text-1);
-    }
-
-    .kpi-footnote {
-        margin: 0;
-        font-size: 12px;
-        color: var(--text-2);
-    }
-
-    .split-grid {
-        display: grid;
+    .panel-grid {
         grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 14px;
-        margin-bottom: 14px;
+        margin-bottom: 16px;
     }
 
-    .panel {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 14px;
+    .metric-card,
+    .dashboard-panel {
+        border-radius: 16px;
         padding: 16px;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-        transform: translateY(0);
     }
 
-    .panel:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 14px 26px rgba(15, 23, 42, 0.1);
-        border-color: #bae6fd;
+    .metric-label {
+        margin: 0;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .08em;
     }
 
-    .panel h2 {
-        margin: 0 0 12px;
-        font-size: 18px;
-        color: var(--text-1);
+    .metric-value {
+        margin: 8px 0 4px;
+        color: var(--text-main);
+        font-size: 31px;
+        line-height: 1;
+        font-weight: 900;
     }
 
-    .health-row {
-        margin-bottom: 12px;
+    .health-list,
+    .distribution-list {
+        display: grid;
+        gap: 12px;
     }
 
-    .health-row:last-child {
-        margin-bottom: 0;
-    }
-
-    .health-row label {
+    .health-item label,
+    .distribution-item {
         display: flex;
+        align-items: center;
         justify-content: space-between;
-        color: var(--text-2);
-        font-size: 13px;
+        gap: 12px;
         margin-bottom: 6px;
-        font-weight: 600;
+        color: var(--text-soft);
+        font-size: 13px;
+        font-weight: 700;
     }
 
     .meter {
-        position: relative;
-        background: #e2e8f0;
-        border-radius: 999px;
         height: 10px;
+        border-radius: 999px;
         overflow: hidden;
+        background: #e2e8f0;
     }
 
-    .meter > span {
+    .meter span {
         display: block;
         height: 100%;
         border-radius: 999px;
-        background: linear-gradient(90deg, #0284c7, #0ea5e9);
+        background: linear-gradient(90deg, #14b8a6, #0f766e);
     }
 
-    .warning-list {
+    .gap-list {
+        list-style: none;
         margin: 0;
         padding: 0;
-        list-style: none;
         display: grid;
         gap: 10px;
     }
 
-    .warning-item {
-        border-radius: 10px;
-        background: #fff7ed;
-        border: 1px solid #fed7aa;
-        padding: 10px;
-        color: var(--warn);
-        font-size: 13px;
+    .gap-item {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-    }
-
-    .warning-item strong {
-        font-size: 16px;
+        justify-content: space-between;
+        gap: 12px;
+        border-radius: 12px;
+        padding: 12px;
+        color: var(--text-main);
+        background: #fffaf0;
+        border: 1px solid #fde68a;
     }
 
     .table-wrap {
         overflow-x: auto;
     }
 
-    table.dashboard-table {
+    .dashboard-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
@@ -228,75 +293,69 @@
     .dashboard-table th,
     .dashboard-table td {
         padding: 11px 12px;
-        font-size: 13px;
-        border-bottom: 1px solid #e9eff5;
         text-align: left;
+        font-size: 13px;
+        border-bottom: 1px solid #e8eef5;
     }
 
     .dashboard-table th {
-        color: #334155;
-        background: #f8fafc;
-        font-size: 12px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: .03em;
+        letter-spacing: .08em;
+        background: #f8fafc;
     }
 
     .dashboard-table tr:hover td {
-        background: #f8fcff;
+        background: #f8fffe;
     }
 
-    .badge {
-        display: inline-block;
-        border-radius: 999px;
-        padding: 3px 9px;
-        font-size: 11px;
-        font-weight: 700;
-    }
-
-    .badge-brand { background: var(--brand-soft); color: #075985; }
-    .badge-success { background: var(--success-soft); color: var(--success); }
-
-    .muted {
-        color: var(--muted);
-        font-size: 12px;
-    }
-
-    .empty {
-        color: var(--muted);
-        text-align: center;
-    }
-
-    .edit-link {
-        color: #0369a1;
-        font-weight: 700;
+    .table-link {
+        color: #0f766e;
+        font-weight: 800;
         text-decoration: none;
     }
 
-    .edit-link:hover {
+    .table-link:hover {
         text-decoration: underline;
+    }
+
+    .muted {
+        color: var(--muted);
     }
 
     html.dark .dashboard-shell,
     body.dark .dashboard-shell,
     [data-theme="dark"] .dashboard-shell {
+        --bg-main: #020617;
+        --bg-accent: #0f2f33;
         --card: #0f172a;
         --border: #1e293b;
-        --text-1: #f1f5f9;
-        --text-2: #cbd5e1;
+        --text-main: #f8fafc;
+        --text-soft: #cbd5e1;
         --muted: #94a3b8;
-        --bg-1: #020617;
-        --bg-2: #082f49;
-        --brand-soft: #082f49;
-        --success-soft: #052e16;
-        --warn-soft: #431407;
-        background: radial-gradient(circle at top right, #0b2f4a 0%, #020617 48%);
+        --brand-soft: #123b39;
+        --info-soft: #123b39;
+        --warn-soft: #3a2a05;
+        --danger-soft: #3b1212;
+        background: radial-gradient(circle at top right, #11334b 0%, #020617 48%);
     }
 
+    html.dark .sidebar-item,
+    body.dark .sidebar-item,
+    [data-theme="dark"] .sidebar-item,
     html.dark .dashboard-table th,
     body.dark .dashboard-table th,
     [data-theme="dark"] .dashboard-table th {
         background: #020617;
-        color: #cbd5e1;
+    }
+
+    html.dark .count-pill,
+    body.dark .count-pill,
+    [data-theme="dark"] .count-pill {
+        background: #111827;
+        color: #e2e8f0;
     }
 
     html.dark .dashboard-table th,
@@ -314,18 +373,22 @@
         background: #0b1328;
     }
 
-    html.dark .warning-item,
-    body.dark .warning-item,
-    [data-theme="dark"] .warning-item {
-        background: #431407;
-        border-color: #7c2d12;
-        color: #fed7aa;
+    html.dark .gap-item,
+    body.dark .gap-item,
+    [data-theme="dark"] .gap-item {
+        background: #2a1d07;
+        border-color: #5b4606;
     }
 
-    html.dark .action-btn-soft,
-    body.dark .action-btn-soft,
-    [data-theme="dark"] .action-btn-soft {
-        color: #ffffff;
+    @media (max-width: 980px) {
+        .dashboard-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-sidebar {
+            position: relative;
+            top: auto;
+        }
     }
 
     @media (max-width: 768px) {
@@ -337,7 +400,7 @@
             font-size: 24px;
         }
 
-        .kpi-value {
+        .metric-value {
             font-size: 26px;
         }
     }
@@ -345,132 +408,243 @@
 {% endblock %}
 
 {% block content %}
-<style>
-.dashboard-layout{display:grid;grid-template-columns:240px 1fr;gap:18px;align-items:start}
-.dashboard-sidebar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;height:fit-content;position:sticky;top:18px}
-.sidebar-header h3{margin:0 0 8px;font-size:15px;color:var(--text-1)}
-.sidebar-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.sidebar-list a{display:flex;justify-content:space-between;align-items:center;text-decoration:none;padding:9px 10px;border-radius:8px;color:var(--text-1)}
-.sidebar-list a:hover{background:var(--brand-soft);border-color:#bae6fd;text-decoration:none}
-.sidebar-list .badge{background:#f8fafc;border:1px solid var(--border);padding:4px 8px;border-radius:999px;font-weight:700;color:var(--text-1);font-size:12px}
-@media (max-width:900px){.dashboard-layout{grid-template-columns:1fr}.dashboard-sidebar{order:-1;position:relative;top:auto}}
-</style>
 <div class="dashboard-shell">
     <div class="dashboard-layout">
         <aside class="dashboard-sidebar" role="navigation" aria-label="Admin shortcuts">
-            <div class="sidebar-header">
-                <h3>Shortcuts</h3>
-            </div>
-            <nav>
-                <ul class="sidebar-list">
-                    {% for m in admin_models %}
-                    <li>
-                        {% if m.url %}
-                        <a href="{{ m.url }}">{{ m.label }} <span class="badge">{% if m.count is not None %}{{ m.count }}{% else %}-{% endif %}</span></a>
-                        {% else %}
-                        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-radius:8px;color:var(--text-1)">{{ m.label }} <span class="badge">{% if m.count is not None %}{{ m.count }}{% else %}-{% endif %}</span></div>
-                        {% endif %}
-                    </li>
-                    {% empty %}
-                    <li><span class="muted">No admin-managed models found.</span></li>
-                    {% endfor %}
-                </ul>
-            </nav>
-        </aside>
-        <main class="dashboard-main">
-    <div class="hero">
-        <div>
-            <h1>Content Operations Dashboard</h1>
-            <p>Monitor content quality, identify gaps, and jump to high-impact admin actions.</p>
-        </div>
-        <div class="quick-actions">
-            <a class="action-btn action-btn-primary" href="{% url 'admin:content_module_add' %}">+ New Module</a>
-            <a class="action-btn action-btn-soft" href="{% url 'admin:content_module_changelist' %}">Manage Modules</a>
-        </div>
-    </div>
-
-    <div class="kpi-grid">
-        <article class="kpi-card">
-            <p class="kpi-label">Courses</p>
-            <p class="kpi-value">{{ stats.courses_count }}</p>
-            <p class="kpi-footnote">{{ health.courses_without_modules }} without modules</p>
-        </article>
-        <article class="kpi-card">
-            <p class="kpi-label">Modules</p>
-            <p class="kpi-value">{{ stats.modules_count }}</p>
-            <p class="kpi-footnote">course structure units</p>
-        </article>
-        <article class="kpi-card">
-            <p class="kpi-label">Modules</p>
-            <p class="kpi-value">{{ stats.modules_count }}</p>
-            <p class="kpi-footnote">course structure units</p>
-        </article>
-        <article class="kpi-card">
-            <p class="kpi-label">Admin Users</p>
-            <p class="kpi-value">{{ stats.staff_users }}</p>
-            <p class="kpi-footnote">{{ stats.total_users }} total users</p>
-        </article>
-    </div>
-
-    <div class="split-grid">
-        <section class="panel">
-            <h2>Content Health</h2>
-            <div class="health-row">
-                <label>
-                    <span>Courses missing modules</span>
-                    <span>{{ health.courses_without_modules }}</span>
-                </label>
-                <div class="meter"><span style="width: {% if health.courses_without_modules %}35%{% else %}100%{% endif %};"></span></div>
-            </div>
-            <p class="muted">Track structural completeness across courses and modules.</p>
-        </section>
-
-        <section class="panel">
-            <h2>Actionable Gaps</h2>
-            <ul class="warning-list">
-                <li class="warning-item">
-                    <span>courses without modules</span>
-                    <strong>{{ health.courses_without_modules }}</strong>
+            <h2 class="sidebar-title">Admin Shortcuts</h2>
+            <p class="sidebar-note">Registered models with quick access from the custom dashboard.</p>
+            <ul class="sidebar-list">
+                {% for m in admin_models %}
+                <li>
+                    {% if m.url %}
+                    <a href="{{ m.url }}" class="sidebar-item">
+                        <span>{{ m.label }}</span>
+                        <span class="count-pill">{% if m.count is not None %}{{ m.count }}{% else %}-{% endif %}</span>
+                    </a>
+                    {% else %}
+                    <div class="sidebar-item">
+                        <span>{{ m.label }}</span>
+                        <span class="count-pill">{% if m.count is not None %}{{ m.count }}{% else %}-{% endif %}</span>
+                    </div>
+                    {% endif %}
                 </li>
+                {% empty %}
+                <li class="empty">No admin-managed models found.</li>
+                {% endfor %}
             </ul>
-        </section>
-    </div>
+        </aside>
 
-    <div class="split-grid">
-        
-
-        <section class="panel">
-            <h2>Recently Added Modules</h2>
-            <div class="table-wrap">
-                <table class="dashboard-table">
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Course</th>
-                            <th>Created</th>
-                            <th>Go</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for module in latest_modules %}
-                        <tr>
-                            <td>{{ module.title }}</td>
-                            <td>{{ module.course.name }}</td>
-                            <td>{{ module.created_at|date:"d M Y, H:i" }}</td>
-                            <td><a class="edit-link" href="{% url 'admin:content_module_change' module.id %}">Edit</a></td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="4" class="empty">No modules added yet.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <main class="dashboard-main">
+            <div class="hero">
+                <div>
+                    <h1>Teaching Platform Overview</h1>
+                    <p>Monitor course structure, interactive content, student activity, and admin readiness from one place.</p>
+                </div>
+                <div class="hero-actions">
+                    <a class="action-btn action-btn-primary" href="{% url 'admin:content_course_add' %}">+ New Course</a>
+                    <a class="action-btn action-btn-soft" href="{% url 'admin:content_module_add' %}">+ New Module</a>
+                    <a class="action-btn action-btn-soft" href="{% url 'admin:content_modulepurchase_changelist' %}">Review Purchases</a>
+                </div>
             </div>
-        </section>
 
-    </div>
+            <section class="metrics-grid">
+                <article class="metric-card">
+                    <p class="metric-label">Courses</p>
+                    <p class="metric-value">{{ stats.courses_count }}</p>
+                    <p class="metric-note">{{ health.courses_with_teacher }} assigned to teachers</p>
+                </article>
+                <article class="metric-card">
+                    <p class="metric-label">Modules</p>
+                    <p class="metric-value">{{ stats.modules_count }}</p>
+                    <p class="metric-note">{{ stats.content_count }} interactive content items</p>
+                </article>
+                <article class="metric-card">
+                    <p class="metric-label">Quizzes</p>
+                    <p class="metric-value">{{ stats.quiz_count }}</p>
+                    <p class="metric-note">{{ recent_attempts|length }} recent attempts listed below</p>
+                </article>
+                <article class="metric-card">
+                    <p class="metric-label">Purchases</p>
+                    <p class="metric-value">{{ stats.purchase_count }}</p>
+                    <p class="metric-note">{{ stats.confirmed_purchase_count }} confirmed, {{ stats.pending_purchase_count }} pending</p>
+                </article>
+                <article class="metric-card">
+                    <p class="metric-label">Learners</p>
+                    <p class="metric-value">{{ stats.student_profiles_count }}</p>
+                    <p class="metric-note">{{ stats.teacher_profiles_count }} teacher profiles</p>
+                </article>
+                <article class="metric-card">
+                    <p class="metric-label">Certificates</p>
+                    <p class="metric-value">{{ stats.certificate_count }}</p>
+                    <p class="metric-note">{{ stats.active_device_sessions }} active device sessions</p>
+                </article>
+            </section>
+
+            <section class="panel-grid">
+                <article class="dashboard-panel">
+                    <h2 class="section-title">Content Health</h2>
+                    <div class="health-list">
+                        <div class="health-item">
+                            <label>
+                                <span>Courses with module structure</span>
+                                <span>{{ health.course_structure_coverage }}%</span>
+                            </label>
+                            <div class="meter"><span style="width: {{ health.course_structure_coverage }}%;"></span></div>
+                        </div>
+                        <div class="health-item">
+                            <label>
+                                <span>Modules with interactive content</span>
+                                <span>{{ health.content_coverage }}%</span>
+                            </label>
+                            <div class="meter"><span style="width: {{ health.content_coverage }}%;"></span></div>
+                        </div>
+                        <div class="health-item">
+                            <label>
+                                <span>Modules with quiz support</span>
+                                <span>{{ health.quiz_coverage }}%</span>
+                            </label>
+                            <div class="meter"><span style="width: {{ health.quiz_coverage }}%;"></span></div>
+                        </div>
+                        <div class="health-item">
+                            <label>
+                                <span>Courses assigned to teachers</span>
+                                <span>{{ health.teacher_assignment_coverage }}%</span>
+                            </label>
+                            <div class="meter"><span style="width: {{ health.teacher_assignment_coverage }}%;"></span></div>
+                        </div>
+                    </div>
+                    <p class="section-note">These percentages are calculated from the current course and module setup.</p>
+                </article>
+
+                <article class="dashboard-panel">
+                    <h2 class="section-title">Actionable Gaps</h2>
+                    <ul class="gap-list">
+                        <li class="gap-item">
+                            <span>Courses without modules</span>
+                            <span class="status-pill {% if health.courses_without_modules %}status-pill-danger{% else %}status-pill-success{% endif %}">{{ health.courses_without_modules }}</span>
+                        </li>
+                        <li class="gap-item">
+                            <span>Modules without content</span>
+                            <span class="status-pill {% if health.modules_without_content %}status-pill-warn{% else %}status-pill-success{% endif %}">{{ health.modules_without_content }}</span>
+                        </li>
+                        <li class="gap-item">
+                            <span>Modules without quizzes</span>
+                            <span class="status-pill {% if health.modules_without_quiz %}status-pill-warn{% else %}status-pill-success{% endif %}">{{ health.modules_without_quiz }}</span>
+                        </li>
+                        <li class="gap-item">
+                            <span>Payment instruction records</span>
+                            <span class="status-pill {% if stats.payment_instruction_count %}status-pill-success{% else %}status-pill-danger{% endif %}">{{ stats.payment_instruction_count }}</span>
+                        </li>
+                    </ul>
+                </article>
+            </section>
+
+            <section class="panel-grid">
+                <article class="dashboard-panel">
+                    <h2 class="section-title">Interactive Content Mix</h2>
+                    <div class="distribution-list">
+                        {% for item in content_type_breakdown %}
+                        <div class="distribution-item">
+                            <span>{{ item.content_type|title }}</span>
+                            <span class="count-pill">{{ item.total }}</span>
+                        </div>
+                        {% empty %}
+                        <p class="empty">No content items added yet.</p>
+                        {% endfor %}
+                    </div>
+                </article>
+
+                <article class="dashboard-panel">
+                    <h2 class="section-title">Recent Purchases</h2>
+                    <div class="table-wrap">
+                        <table class="dashboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Course</th>
+                                    <th>Status</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for purchase in recent_purchases %}
+                                <tr>
+                                    <td>{{ purchase.user.username }}</td>
+                                    <td>{{ purchase.course.name }}</td>
+                                    <td>
+                                        <span class="status-pill {% if purchase.is_purchased %}status-pill-success{% else %}status-pill-warn{% endif %}">
+                                            {% if purchase.is_purchased %}Confirmed{% else %}Pending{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ purchase.purchased_at|date:"d M Y, H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="empty">No purchases recorded yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <section class="panel-grid">
+                <article class="dashboard-panel">
+                    <h2 class="section-title">Recently Added Modules</h2>
+                    <div class="table-wrap">
+                        <table class="dashboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Module</th>
+                                    <th>Course</th>
+                                    <th>Created</th>
+                                    <th>Go</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for module in latest_modules %}
+                                <tr>
+                                    <td>{{ module.title }}</td>
+                                    <td>{{ module.course.name }}</td>
+                                    <td>{{ module.created_at|date:"d M Y, H:i" }}</td>
+                                    <td><a class="table-link" href="{% url 'admin:content_module_change' module.id %}">Edit</a></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="empty">No modules added yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="dashboard-panel">
+                    <h2 class="section-title">Recent Quiz Attempts</h2>
+                    <div class="table-wrap">
+                        <table class="dashboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Quiz</th>
+                                    <th>Score</th>
+                                    <th>Submitted</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attempt in recent_attempts %}
+                                <tr>
+                                    <td>{{ attempt.user.username }}</td>
+                                    <td>{{ attempt.quiz.title }}</td>
+                                    <td>{{ attempt.score }}%</td>
+                                    <td>{{ attempt.submitted_at|date:"d M Y, H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="empty">No quiz attempts yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
         </main>
     </div>
 </div>
 {% endblock %}
-
-

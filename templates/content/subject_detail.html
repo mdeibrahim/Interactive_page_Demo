@@ -1,17 +1,16 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ subject.title }} — {{ subcategory.name }} — Teaching Platform{% endblock %}
-{% block meta_description %}{{ subject.title }} — Interactive lesson with multimedia explanations.{% endblock %}
+{% block title %}{{ module.title }} — {{ course.name }} — Teaching Platform{% endblock %}
+{% block meta_description %}{{ module.description|default:"Interactive lesson with multimedia explanations." }}{% endblock %}
 
 {% block breadcrumb %}
 <nav class="breadcrumb-bar">
     <div class="container">
         <ol class="breadcrumb">
             <li><a href="{% url 'content:home' %}"><i class="fa-solid fa-house"></i></a></li>
-            <li><a href="{% url 'content:category_detail' category.slug %}">{{ category.name }}</a></li>
-            <li><a href="{% url 'content:subcategory_detail' category.slug subcategory.slug %}">{{ subcategory.name }}</a></li>
-            <li class="active">{{ subject.title }}</li>
+            <li><a href="{% url 'content:course_detail' course.slug %}">{{ course.name }}</a></li>
+            <li class="active">{{ module.title }}</li>
         </ol>
     </div>
 </nav>
@@ -19,36 +18,35 @@
 
 {% block content %}
 <div class="subject-page container">
-
-    <!-- Subject Header -->
     <div class="subject-page-header">
         <div class="subject-header-top">
             <div>
                 <div class="subject-path">
-                    <span class="path-tag">{{ category.name }}</span>
+                    <span class="path-tag">{{ course.name }}</span>
                     <i class="fa-solid fa-chevron-right"></i>
-                    <span class="path-tag">{{ subcategory.name }}</span>
+                    <span class="path-tag">Module {{ module.order|default:0 }}</span>
                 </div>
-                <h1 class="subject-page-title">{{ subject.title }}</h1>
+                <h1 class="subject-page-title">{{ module.title }}</h1>
                 <div class="subject-updated">
-                    <i class="fa-regular fa-clock"></i> Last updated: {{ subject.updated_at|date:"F d, Y" }}
+                    <i class="fa-regular fa-clock"></i> Last updated: {{ module.updated_at|default:module.created_at|date:"F d, Y" }}
                 </div>
             </div>
-            <!-- Edit Button -->
-            <a href="{% url 'content:subject_editor' subject.id %}" class="btn btn-editor" id="btn-open-editor" title="Open Frontend Editor" style="background-color: #16a34a; border-color: #16a34a; color: #ffffff; font-weight: 700;">
-                <i class="fa-solid fa-pen-to-square"></i>
-                <span>Edit Content</span>
-            </a>
         </div>
     </div>
 
-    <!-- Two-column layout -->
+    <div class="content-article" style="margin-bottom: 24px;">
+        <h2 class="article-heading">
+            <i class="fa-solid fa-circle-info"></i>
+            Editable Text Content Note
+        </h2>
+        <div class="article-body">
+            <p>এই অংশটি text content হিসেবে রাখা হয়েছে, যাতে আপনি editor/API দিয়ে সহজে update করতে পারেন।</p>
+            <p>উদাহরণ: <strong>Target Persona</strong>, <strong>Content Pillars</strong>, এবং <strong>CTA</strong> পরিকল্পনা এখানে লিখে রাখতে পারেন।</p>
+        </div>
+    </div>
+
     <div class="subject-layout">
-
-        <!-- Main Content Panel -->
         <div class="subject-main">
-
-            <!-- Interactive Content Toolbar (Demo buttons) -->
             {% if interactive_contents %}
             <div class="content-toolbar-section">
                 <h2 class="toolbar-heading">
@@ -75,20 +73,44 @@
             </div>
             {% endif %}
 
-            <!-- Main Body Content -->
             <div class="content-article">
                 <h2 class="article-heading">
                     <i class="fa-solid fa-file-lines"></i>
-                    News Article with Interactive Elements
+                    Module Notes and Lesson Overview
                 </h2>
                 <div class="article-body" id="articleBody">
-                    {{ subject.body_content|safe }}
+                    {{ module.body_content|safe }}
                 </div>
             </div>
 
-        </div><!-- /subject-main -->
+            <div class="content-article" style="margin-top: 24px;">
+                <h2 class="article-heading">
+                    <i class="fa-solid fa-circle-play"></i>
+                    Module Content List
+                </h2>
+                <div class="article-body">
+                    {% for content in interactive_contents %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border);">
+                        <div>
+                            <div style="font-weight: 700;">{{ forloop.counter }}. {{ content.title }}</div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                                {{ content.get_content_type_display }}
+                                {% if content.duration_seconds %} • {{ content.duration }}{% endif %}
+                            </div>
+                        </div>
+                        {% if has_access %}
+                        <a href="{% url 'content:play_video' course.slug module.slug content.id %}" class="btn btn-primary" style="padding: 10px 16px;">Open</a>
+                        {% else %}
+                        <span class="btn" style="background: #fee2e2; color: #b91c1c; padding: 10px 16px;">Locked</span>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p>No module content has been added yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
 
-        <!-- Sidebar — Accordion Sections -->
         {% if accordion_sections %}
         <aside class="subject-sidebar">
             <div class="sidebar-card">
@@ -111,11 +133,9 @@
             </div>
         </aside>
         {% endif %}
-
-    </div><!-- /subject-layout -->
+    </div>
 </div>
 
-<!-- Hidden content data for JS -->
 <script id="interactiveData" type="application/json">
 {
     "apiUrl": "{% url 'content:get_interactive_content' 0 %}"

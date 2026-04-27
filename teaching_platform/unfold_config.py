@@ -66,11 +66,6 @@ UNFOLD = {
                         "link": reverse_lazy("admin:content_modulepurchase_changelist"),
                     },
                     {
-                        "title": "Course Change Requests",
-                        "icon": "edit_calendar",
-                        "link": reverse_lazy("admin:content_coursechangerequest_changelist"),
-                    },
-                    {
                         "title": "Certificates",
                         "icon": "verified",
                         "link": reverse_lazy("admin:content_coursecertificate_changelist"),

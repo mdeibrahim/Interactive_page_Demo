@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 import re
 
-from .models import CourseChangeRequest, UserProfile, UserRole
+from .models import UserProfile, UserRole
 
 User = get_user_model()
 
@@ -90,46 +90,8 @@ class StudentSignupForm(BaseRoleSignupForm):
                 'phone_number': self.cleaned_data['phone_number'],
                 'student_institution': self.cleaned_data['student_institution'].strip(),
                 'student_level': self.cleaned_data['student_level'].strip(),
-                'teacher_institution': '',
-                'teacher_subject': '',
-                'teacher_experience_years': None,
             },
         )
-
-
-class TeacherSignupForm(BaseRoleSignupForm):
-    teacher_institution = forms.CharField(max_length=180, required=True)
-    teacher_subject = forms.CharField(max_length=120, required=True)
-    teacher_experience_years = forms.IntegerField(required=True, min_value=0, max_value=60)
-
-    class Meta(BaseRoleSignupForm.Meta):
-        fields = BaseRoleSignupForm.Meta.fields + ('teacher_institution', 'teacher_subject', 'teacher_experience_years')
-
-    def save_profile(self, user, role):
-        UserProfile.objects.update_or_create(
-            user=user,
-            defaults={
-                'role': role,
-                'full_name': self.cleaned_data['full_name'].strip(),
-                'phone_number': self.cleaned_data['phone_number'],
-                'teacher_institution': self.cleaned_data['teacher_institution'].strip(),
-                'teacher_subject': self.cleaned_data['teacher_subject'].strip(),
-                'teacher_experience_years': self.cleaned_data['teacher_experience_years'],
-                'student_institution': '',
-                'student_level': '',
-            },
-        )
-
-
-class CourseChangeRequestForm(forms.ModelForm):
-    class Meta:
-        model = CourseChangeRequest
-        fields = ('request_type', 'summary', 'details')
-        widgets = {
-            'request_type': forms.Select(attrs={'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5'}),
-            'summary': forms.TextInput(attrs={'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5'}),
-            'details': forms.Textarea(attrs={'rows': 4, 'class': 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5'}),
-        }
 
 
 class NewCourseAddRequestForm(forms.Form):
@@ -165,15 +127,10 @@ class ProfileUpdateForm(forms.Form):
     student_institution = forms.CharField(max_length=180, required=False)
     student_level = forms.CharField(max_length=80, required=False, label='Class / Level')
 
-    teacher_institution = forms.CharField(max_length=180, required=False)
-    teacher_subject = forms.CharField(max_length=120, required=False)
-    teacher_experience_years = forms.IntegerField(required=False, min_value=0, max_value=60)
-
     def __init__(self, *args, user=None, profile=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user
         self.profile = profile
-        self.role = profile.role if profile else UserRole.STUDENT
 
         if not self.is_bound and user and profile:
             self.initial.update({
@@ -183,18 +140,10 @@ class ProfileUpdateForm(forms.Form):
                 'profile_picture': profile.profile_picture,
                 'student_institution': profile.student_institution,
                 'student_level': profile.student_level,
-                'teacher_institution': profile.teacher_institution,
-                'teacher_subject': profile.teacher_subject,
-                'teacher_experience_years': profile.teacher_experience_years,
             })
 
-        if self.role == UserRole.STUDENT:
-            self.fields['student_institution'].required = True
-            self.fields['student_level'].required = True
-        if self.role == UserRole.TEACHER:
-            self.fields['teacher_institution'].required = True
-            self.fields['teacher_subject'].required = True
-            self.fields['teacher_experience_years'].required = True
+        self.fields['student_institution'].required = True
+        self.fields['student_level'].required = True
 
     def clean_email(self):
         email = self.cleaned_data.get('email', '').strip().lower()
@@ -226,18 +175,10 @@ class ProfileUpdateForm(forms.Form):
 
     def clean(self):
         cleaned = super().clean()
-        if self.role == UserRole.STUDENT:
-            if not (cleaned.get('student_institution') or '').strip():
-                self.add_error('student_institution', 'This field is required for students.')
-            if not (cleaned.get('student_level') or '').strip():
-                self.add_error('student_level', 'This field is required for students.')
-        if self.role == UserRole.TEACHER:
-            if not (cleaned.get('teacher_institution') or '').strip():
-                self.add_error('teacher_institution', 'This field is required for teachers.')
-            if not (cleaned.get('teacher_subject') or '').strip():
-                self.add_error('teacher_subject', 'This field is required for teachers.')
-            if cleaned.get('teacher_experience_years') is None:
-                self.add_error('teacher_experience_years', 'This field is required for teachers.')
+        if not (cleaned.get('student_institution') or '').strip():
+            self.add_error('student_institution', 'This field is required for students.')
+        if not (cleaned.get('student_level') or '').strip():
+            self.add_error('student_level', 'This field is required for students.')
         return cleaned
 
     def save(self):
@@ -254,18 +195,11 @@ class ProfileUpdateForm(forms.Form):
         if uploaded_picture:
             profile.profile_picture = uploaded_picture
 
-        if self.role == UserRole.STUDENT:
-            profile.student_institution = self.cleaned_data['student_institution'].strip()
-            profile.student_level = self.cleaned_data['student_level'].strip()
-            profile.teacher_institution = ''
-            profile.teacher_subject = ''
-            profile.teacher_experience_years = None
-        else:
-            profile.teacher_institution = self.cleaned_data['teacher_institution'].strip()
-            profile.teacher_subject = self.cleaned_data['teacher_subject'].strip()
-            profile.teacher_experience_years = self.cleaned_data['teacher_experience_years']
-            profile.student_institution = ''
-            profile.student_level = ''
+        profile.student_institution = self.cleaned_data['student_institution'].strip()
+        profile.student_level = self.cleaned_data['student_level'].strip()
+        profile.teacher_institution = ''
+        profile.teacher_subject = ''
+        profile.teacher_experience_years = None
 
         profile.save()
         return profile
@@ -283,17 +217,10 @@ class OTPForm(forms.Form):
         profile.full_name = self.cleaned_data['full_name'].strip()
         profile.phone_number = self.cleaned_data['phone_number']
 
-        if self.role == UserRole.STUDENT:
-            profile.student_institution = self.cleaned_data['student_institution'].strip()
-            profile.student_level = self.cleaned_data['student_level'].strip()
-            profile.teacher_institution = ''
-            profile.teacher_subject = ''
-            profile.teacher_experience_years = None
-        else:
-            profile.teacher_institution = self.cleaned_data['teacher_institution'].strip()
-            profile.teacher_subject = self.cleaned_data['teacher_subject'].strip()
-            profile.teacher_experience_years = self.cleaned_data['teacher_experience_years']
-            profile.student_institution = ''
-            profile.student_level = ''
+        profile.student_institution = self.cleaned_data['student_institution'].strip()
+        profile.student_level = self.cleaned_data['student_level'].strip()
+        profile.teacher_institution = ''
+        profile.teacher_subject = ''
+        profile.teacher_experience_years = None
         profile.save()
         return profile

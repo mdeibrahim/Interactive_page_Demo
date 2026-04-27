@@ -3,16 +3,17 @@ from django.utils import timezone
 from unfold.admin import ModelAdmin, TabularInline
 from .models import (
     CourseCertificate,
-    CourseChangeRequest,
     CourseQuiz,
     CourseQuizQuestion,
     CourseContent,
     Course,
+    ModuleAccordionSection,
     PaymentInstruction,
     QuizAttempt,
     ModulePurchase,
     Module, UserProfile,
     StudentDeviceSession,
+    
 )
 
 
@@ -21,21 +22,39 @@ class CourseInline(TabularInline):
     extra = 0
     show_change_link = True
     prepopulated_fields = {'slug': ('name',)}
-    fields = ('name', 'slug', 'teacher', 'price', 'description')
+    fields = ('name', 'slug', 'price', 'description')
 
 
 # Category admin removed — categories removed from models
 
 @admin.register(Course)
 class CourseAdmin(ModelAdmin):
-    list_display = ('name', 'teacher', 'price', 'created_at')
-    list_filter = ('teacher', 'created_at')
-    search_fields = ('name', 'slug', 'teacher__username')
-    autocomplete_fields = ('teacher',)
+    list_display = ('name', 'price', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('name', 'slug')
     prepopulated_fields = {'slug': ('name',)}
     date_hierarchy = 'created_at'
     list_per_page = 30
 
+class CourseContentInline(TabularInline):
+    model = CourseContent
+    extra = 0
+    show_change_link = True
+    fields = ('title', 'content_type', 'text_content', 'image', 'audio', 'video', 'youtube_url', 'preview')
+    readonly_fields = ('id',)
+
+    def preview(self, obj):
+        if not obj.pk:
+            return 'Save to preview'
+        return CourseContentAdmin.preview(self, obj)
+    preview.short_description = 'Preview'
+
+
+class ModuleAccordionSectionInline(TabularInline):
+    model = ModuleAccordionSection
+    extra = 0
+    show_change_link = True
+    fields = ('title', 'order', 'is_open_by_default')
 
 
 
@@ -65,7 +84,6 @@ class UserProfileAdmin(ModelAdmin):
     fieldsets = (
         ('Account', {'fields': ('user', 'role', 'full_name', 'phone_number')}),
         ('Student Fields', {'fields': ('student_institution', 'student_level')}),
-        ('Teacher Fields', {'fields': ('teacher_institution', 'teacher_subject', 'teacher_experience_years')}),
         ('Audit', {'fields': ('created_at', 'updated_at')}),
     )
     readonly_fields = ('created_at', 'updated_at')
@@ -78,14 +96,6 @@ class StudentDeviceSessionAdmin(ModelAdmin):
     list_filter = ('created_at', 'expires_at')
     autocomplete_fields = ('user',)
     list_per_page = 50
-
-
-@admin.register(CourseContent)
-class CourseContentAdmin(ModelAdmin):
-    list_display = ('title', 'module', 'order', 'created_at')
-    list_filter = ('created_at', 'module__course')
-    search_fields = ('title', 'module__title', 'module__course__name')
-    autocomplete_fields = ('module',)
 
 
 class CourseQuizQuestionInline(TabularInline):
@@ -116,32 +126,98 @@ class CourseCertificateAdmin(ModelAdmin):
     search_fields = ('user__username', 'course__name', 'certificate_code')
     autocomplete_fields = ('user', 'course')
 
-
-@admin.register(CourseChangeRequest)
-class CourseChangeRequestAdmin(ModelAdmin):
-    list_display = ('course_or_requested_name', 'teacher', 'request_type', 'status', 'created_at', 'reviewed_by', 'reviewed_at')
-    list_filter = ('status', 'request_type', 'created_at')
-    search_fields = ('course__name', 'requested_course_name', 'teacher__username', 'summary', 'details')
-    autocomplete_fields = ('teacher', 'course', 'reviewed_by')
-    readonly_fields = ('created_at',)
-
-    def save_model(self, request, obj, form, change):
-        if obj.status in ('approved', 'rejected'):
-            obj.reviewed_by = request.user
-            obj.reviewed_at = timezone.now()
-        super().save_model(request, obj, form, change)
-
-    def course_or_requested_name(self, obj):
-        if obj.course:
-            return obj.course.name
-        return obj.requested_course_name or 'N/A'
-    course_or_requested_name.short_description = 'Course'
-
-
+from django.urls import reverse
+from django.utils.html import format_html
 @admin.register(Module)
 class ModuleAdmin(ModelAdmin):
-    list_display = ('title', 'course')
+    list_display = ('title', 'course', 'frontend_editor_link')
     search_fields = ('title',)
+    inlines = [CourseContentInline, ModuleAccordionSectionInline]
+    readonly_fields = ('frontend_editor_link',)
+
+
+    fieldsets = (
+        ('Basic Info', {
+            'fields': ('course', 'title', 'slug', 'frontend_editor_link')
+        }),
+        ('Body Content', {
+            'fields': ('body_content',),
+            'description': (
+                'Use HTML. To add an interactive highlight link, use: '
+                '<code>&lt;span class="highlight-link" data-content-id="ID"&gt;your text&lt;/span&gt;</code> '
+                'where ID is the CourseContent ID.'
+            )
+        }),
+    )
+
+    def content_count(self, obj):
+        return obj.course_contents.count()
+    content_count.short_description = 'Interactive Items'
+
+    def edit_contents_link(self, obj):
+        url = f"{reverse('admin:content_coursecontent_changelist')}?module__id__exact={obj.id}"
+        return format_html('<a href="{}">Manage Items</a>', url)
+    edit_contents_link.short_description = 'Interactive Content'
+
+    def frontend_editor_link(self, obj):
+        if not obj.pk:
+            return 'Save first'
+        url = reverse('content:subject_editor', args=[obj.course.slug, obj.slug])
+        return format_html('<a href="{}" target="_blank">Open Frontend Editor</a>', url)
+    frontend_editor_link.short_description = 'Frontend Editor'
+
+
+
+@admin.register(CourseContent)
+class CourseContentAdmin(ModelAdmin):
+    list_display = ('id', 'title', 'content_type', 'module', 'course', 'preview', 'created_at')
+    list_select_related = ('module', 'module__course')
+    list_filter = ('content_type', 'module__course', 'created_at')
+    search_fields = ('title', 'text_content', 'youtube_url')
+    autocomplete_fields = ('module',)
+    date_hierarchy = 'created_at'
+    list_per_page = 25
+    readonly_fields = ('id', 'preview')
+
+    fieldsets = (
+        ('Basic', {
+            'fields': ('id', 'module', 'title', 'content_type')
+        }),
+        ('Text Content', {
+            'fields': ('text_content',),
+            'classes': ('collapse',),
+        }),
+        ('Media Files', {
+            'fields': ('image', 'audio', 'video'),
+            'classes': ('collapse',),
+        }),
+        ('YouTube', {
+            'fields': ('youtube_url',),
+            'classes': ('collapse',),
+        }),
+        ('Preview', {
+            'fields': ('preview',),
+        }),
+    )
+
+    def course(self, obj):
+        return obj.module.course
+    course.short_description = 'Course'
+    course.admin_order_field = 'module__course__name'
+
+    def preview(self, obj):
+        if obj.content_type == 'image' and obj.image:
+            return format_html('<img src="{}" style="max-height:100px;max-width:200px;border-radius:6px;" />', obj.image.url)
+        if obj.content_type == 'audio' and obj.audio:
+            return format_html('<audio controls style="max-width:300px;"><source src="{}"></audio>', obj.audio.url)
+        if obj.content_type == 'video' and obj.video:
+            return format_html('<video controls style="max-height:100px;max-width:200px;"><source src="{}"></video>', obj.video.url)
+        if obj.content_type == 'youtube' and obj.youtube_url:
+            return format_html('<a href="{}" target="_blank">▶ Open YouTube</a>', obj.youtube_url)
+        if obj.content_type == 'text' and obj.text_content:
+            return format_html('<div style="max-width:300px;overflow:hidden;font-size:12px;">{}</div>', obj.text_content[:200])
+        return '—'
+    preview.short_description = 'Preview'
 
 
 @admin.register(PaymentInstruction)
@@ -153,7 +229,4 @@ class PaymentInstructionAdmin(ModelAdmin):
 admin.site.site_header = "Interactive Teaching Platform"
 admin.site.site_title = "Teaching Platform Admin"
 admin.site.index_title = "Content Management"
-
-
-
 

@@ -59,7 +59,6 @@
                     </div>
                 </div>
 
-                {% if profile.role == 'student' %}
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label for="id_student_institution" class="mb-1.5 block text-sm font-semibold text-slate-700">School / College</label>
@@ -72,28 +71,6 @@
                         {% if form.student_level.errors %}<p class="mt-1 text-sm text-rose-600">{{ form.student_level.errors|striptags }}</p>{% endif %}
                     </div>
                 </div>
-                {% else %}
-                {# Teacher profile fields are temporarily disabled. #}
-                {#
-                <div class="grid gap-4 sm:grid-cols-3">
-                    <div>
-                        <label for="id_teacher_institution" class="mb-1.5 block text-sm font-semibold text-slate-700">Institution</label>
-                        <input id="id_teacher_institution" type="text" name="teacher_institution" value="{{ form.teacher_institution.value|default:'' }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">
-                        {% if form.teacher_institution.errors %}<p class="mt-1 text-sm text-rose-600">{{ form.teacher_institution.errors|striptags }}</p>{% endif %}
-                    </div>
-                    <div>
-                        <label for="id_teacher_subject" class="mb-1.5 block text-sm font-semibold text-slate-700">Primary Subject</label>
-                        <input id="id_teacher_subject" type="text" name="teacher_subject" value="{{ form.teacher_subject.value|default:'' }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">
-                        {% if form.teacher_subject.errors %}<p class="mt-1 text-sm text-rose-600">{{ form.teacher_subject.errors|striptags }}</p>{% endif %}
-                    </div>
-                    <div>
-                        <label for="id_teacher_experience_years" class="mb-1.5 block text-sm font-semibold text-slate-700">Experience (Years)</label>
-                        <input id="id_teacher_experience_years" type="number" min="0" max="60" name="teacher_experience_years" value="{{ form.teacher_experience_years.value|default:'' }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200">
-                        {% if form.teacher_experience_years.errors %}<p class="mt-1 text-sm text-rose-600">{{ form.teacher_experience_years.errors|striptags }}</p>{% endif %}
-                    </div>
-                </div>
-                #}
-                {% endif %}
 
                 <div class="flex flex-wrap items-center gap-3">
                     <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-5 py-2.5 font-semibold text-white transition hover:from-cyan-700 hover:to-blue-700">

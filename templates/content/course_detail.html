@@ -90,7 +90,7 @@
                                 <div class="min-w-0">
                                     <h3 class="truncate text-sm font-semibold text-slate-800 sm:text-base">{{ module.title }}</h3>
                                     <div class="mt-1 flex flex-wrap gap-3 text-xs text-slate-500">
-                                        <span><i class="fa-solid fa-video"></i> {{ module.course_contents.count }} videos</span>
+                                        <span><i class="fa-solid fa-video"></i> {{ module.course_contents.count }} items</span>
                                         {% if module.quiz_count %}
                                         <span><i class="fa-solid fa-question"></i> {{ module.quiz_count }} quizzes</span>
                                         {% endif %}
@@ -101,7 +101,7 @@
                                 {% if module.first_content %}
                                 <a href="{% url 'content:play_video' course.slug module.slug module.first_content.id %}" class="inline-flex items-center gap-2 rounded-lg bg-amber-400 px-3 py-1 text-sm font-semibold text-slate-900">Play</a>
                                 {% else %}
-                                <span class="text-sm text-slate-500">No videos</span>
+                                <span class="text-sm text-slate-500">No lessons</span>
                                 {% endif %}
                                 {% else %}
                                 <span class="inline-flex items-center gap-2 rounded-lg bg-rose-100 px-3 py-1 text-sm font-semibold text-rose-700">Locked</span>
@@ -202,5 +202,3 @@
     </div>
 </section>
 {% endblock %}
-
-

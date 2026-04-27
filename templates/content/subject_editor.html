@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Editor — {{ subject.title }}{% endblock %}
-{% block meta_description %}Frontend rich-text editor for {{ subject.title }}{% endblock %}
+{% block title %}Editor — {{ module.title }}{% endblock %}
+{% block meta_description %}Frontend rich-text editor for {{ module.title }}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/editor.css' %}">
@@ -13,9 +13,8 @@
     <div class="container">
         <ol class="breadcrumb">
             <li><a href="{% url 'content:home' %}"><i class="fa-solid fa-house"></i></a></li>
-            <li><a href="{% url 'content:category_detail' category.slug %}">{{ category.name }}</a></li>
-            <li><a href="{% url 'content:subcategory_detail' category.slug subcategory.slug %}">{{ subcategory.name }}</a></li>
-            <li><a href="{% url 'content:subject_detail' category.slug subcategory.slug subject.slug %}">{{ subject.title }}</a></li>
+            <li><a href="{% url 'content:course_detail' course.slug %}">{{ course.name }}</a></li>
+            <li><a href="{{ preview_url }}">{{ module.title }}</a></li>
             <li class="active"><i class="fa-solid fa-pen-to-square"></i> Editor</li>
         </ol>
     </div>
@@ -24,15 +23,15 @@
 
 {% block content %}
 <div class="editor-shell container" style="margin-top: 40px; margin-bottom: 80px;">
-    <div class="editor-topbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <div class="editor-topbar-left" style="display: flex; align-items: center; gap: 15px;">
+    <div class="editor-topbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 16px; flex-wrap: wrap;">
+        <div class="editor-topbar-left" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
             <div class="editor-status" id="editorStatus" style="color: #16a34a; font-size: 0.9rem; font-weight: 500;">
                 <i class="fa-solid fa-circle-check"></i> Saved
             </div>
-            <input type="text" class="editor-title-input" id="editorTitleInput" value="{{ subject.title }}" placeholder="Subject title..." autocomplete="off" style="font-size: 1.5rem; font-weight: bold; border: none; outline: none; background: transparent; width: 400px;">
+            <input type="text" class="editor-title-input" id="editorTitleInput" value="{{ module.title }}" placeholder="Module title..." autocomplete="off" style="font-size: 1.5rem; font-weight: bold; border: none; outline: none; background: transparent; width: 400px;">
         </div>
-        <div class="editor-topbar-right" style="display: flex; gap: 10px;">
-            <a href="{% url 'content:subject_detail' category.slug subcategory.slug subject.slug %}" class="btn" style="background: white; border: 1px solid var(--border); color: var(--text-primary);" target="_blank">
+        <div class="editor-topbar-right" style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ preview_url }}" class="btn" style="background: white; border: 1px solid var(--border); color: var(--text-primary);" target="_blank">
                 <i class="fa-solid fa-eye"></i> Preview Live
             </a>
             <button class="btn btn-primary" id="btn-save-body"><i class="fa-solid fa-floppy-disk"></i> Save</button>
@@ -43,11 +42,11 @@
         <div class="editor-main">
             <div class="rich-text-container" style="display: flex; flex-direction: column; gap: 15px;">
                 <div class="rte-toolbar" id="rteToolbar">
-                    <button class="rte-btn" data-cmd="bold" title="Bold (Ctrl+B)" id="btn-bold" style="font-weight: bold; font-family: sans-serif; font-size: 1.1rem;">B</button>
-                    <button class="rte-btn" data-cmd="italic" title="Italic (Ctrl+I)" id="btn-italic" style="font-style: italic; font-family: serif; font-size: 1.1rem;">I</button>
-                    <button class="rte-btn" data-cmd="underline" title="Underline (Ctrl+U)" id="btn-underline" style="text-decoration: underline; font-family: sans-serif; font-size: 1.1rem;">U</button>
+                    <button class="rte-btn" data-cmd="bold" title="Bold (Ctrl+B)" id="btn-bold" type="button" style="font-weight: bold; font-family: sans-serif; font-size: 1.1rem;">B</button>
+                    <button class="rte-btn" data-cmd="italic" title="Italic (Ctrl+I)" id="btn-italic" type="button" style="font-style: italic; font-family: serif; font-size: 1.1rem;">I</button>
+                    <button class="rte-btn" data-cmd="underline" title="Underline (Ctrl+U)" id="btn-underline" type="button" style="text-decoration: underline; font-family: sans-serif; font-size: 1.1rem;">U</button>
                     <div class="rte-divider"></div>
-                    <button class="rte-btn rte-btn-link" id="btn-insert-link" title="Link Media">
+                    <button class="rte-btn rte-btn-link" id="btn-insert-link" type="button" title="Link Media">
                         <i class="fa-solid fa-link" style="color: #2563eb;"></i> <span style="color: #2563eb; font-weight: 600; font-size: 0.95rem;">Link Media</span>
                     </button>
                 </div>
@@ -69,7 +68,7 @@
                 </div>
 
                 <div class="rte-editor-wrapper">
-                    <div class="rte-content" id="rteContent" contenteditable="true" spellcheck="true" data-placeholder="Start writing your subject content here...">{{ subject.body_content|safe }}</div>
+                    <div class="rte-content" id="rteContent" contenteditable="true" spellcheck="true" data-placeholder="Start writing your module content here...">{{ module.body_content|safe }}</div>
                 </div>
             </div>
         </div>
@@ -78,11 +77,11 @@
             <div class="editor-panel" id="panelIC">
                 <div class="editor-panel-header">
                     <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Link Media Items</h3>
-                    <button class="btn-panel-add" id="btn-add-ic" title="Add new media item"><i class="fa-solid fa-plus"></i></button>
+                    <button class="btn-panel-add" id="btn-add-ic" title="Add new media item" type="button"><i class="fa-solid fa-plus"></i></button>
                 </div>
                 <div class="editor-panel-body" id="icList">
                     {% for ic in interactive_contents %}
-                    <div class="ic-item ic-item--{{ ic.content_type }}" data-ic-id="{{ ic.id }}" id="ic-card-{{ ic.id }}">
+                    <div class="ic-item ic-item--{{ ic.content_type }}" data-ic-id="{{ ic.id }}" data-ic-title="{{ ic.title|escape }}" data-ic-type="{{ ic.content_type }}" data-ic-text="{{ ic.text_content|default:''|escape }}" data-ic-youtube="{{ ic.youtube_url|default:''|escape }}" id="ic-card-{{ ic.id }}">
                         <div class="ic-item-icon">
                             {% if ic.content_type == 'text' %}<i class="fa-solid fa-font"></i>{% elif ic.content_type == 'image' %}<i class="fa-solid fa-image"></i>{% elif ic.content_type == 'audio' %}<i class="fa-solid fa-headphones"></i>{% elif ic.content_type == 'video' %}<i class="fa-solid fa-video"></i>{% elif ic.content_type == 'youtube' %}<i class="fa-brands fa-youtube"></i>{% endif %}
                         </div>
@@ -91,8 +90,8 @@
                             <div class="ic-item-type">{{ ic.get_content_type_display }}</div>
                         </div>
                         <div class="ic-item-actions">
-                            <button class="ic-action-btn ic-edit-btn" data-ic-id="{{ ic.id }}" title="Edit"><i class="fa-solid fa-pen"></i></button>
-                            <button class="ic-action-btn ic-delete-btn" data-ic-id="{{ ic.id }}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                            <button class="ic-action-btn ic-edit-btn" data-ic-id="{{ ic.id }}" title="Edit" type="button"><i class="fa-solid fa-pen"></i></button>
+                            <button class="ic-action-btn ic-delete-btn" data-ic-id="{{ ic.id }}" title="Delete" type="button"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                     {% empty %}
@@ -136,19 +135,19 @@
             <div class="editor-panel" id="panelAccordion" style="margin-top: 20px;">
                 <div class="editor-panel-header">
                     <h3><i class="fa-solid fa-list"></i> Accordion Sections</h3>
-                    <button class="btn-panel-add" id="btn-add-accordion" title="Add new accordion section"><i class="fa-solid fa-plus"></i></button>
+                    <button class="btn-panel-add" id="btn-add-accordion" title="Add new accordion section" type="button"><i class="fa-solid fa-plus"></i></button>
                 </div>
                 <div class="editor-panel-body" id="accordionList">
                     {% for section in accordion_sections %}
-                    <div class="acc-item" data-sec-id="{{ section.id }}" id="acc-card-{{ section.id }}">
+                    <div class="acc-item" data-sec-id="{{ section.id }}" data-sec-title="{{ section.title|escape }}" data-sec-content="{{ section.content|escape }}" data-sec-open="{% if section.is_open_by_default %}true{% else %}false{% endif %}" id="acc-card-{{ section.id }}">
                         <div class="acc-item-icon"><i class="fa-solid fa-layer-group"></i></div>
                         <div class="acc-item-body">
                             <div class="acc-item-title">{{ section.title }}</div>
                             {% if section.is_open_by_default %}<span class="acc-badge">Open by default</span>{% endif %}
                         </div>
                         <div class="acc-item-actions">
-                            <button class="ic-action-btn acc-edit-btn" data-sec-id="{{ section.id }}" title="Edit"><i class="fa-solid fa-pen"></i></button>
-                            <button class="ic-action-btn acc-delete-btn" data-sec-id="{{ section.id }}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                            <button class="ic-action-btn acc-edit-btn" data-sec-id="{{ section.id }}" title="Edit" type="button"><i class="fa-solid fa-pen"></i></button>
+                            <button class="ic-action-btn acc-delete-btn" data-sec-id="{{ section.id }}" title="Delete" type="button"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                     {% empty %}
@@ -178,14 +177,16 @@
     </div>
 </div>
 
+{{ interactive_contents_payload|json_script:"initialInteractiveContents" }}
+{{ accordion_sections_payload|json_script:"initialAccordionSections" }}
 <script id="editorData" type="application/json">
 {
-    "subjectId": {{ subject.id }},
-    "saveUrl": "{% url 'content:api_subject_save' subject.id %}",
-    "icCreateUrl": "{% url 'content:api_ic_create' subject.id %}",
+    "moduleId": {{ module.id }},
+    "saveUrl": "{% url 'content:api_subject_save' module.id %}",
+    "icCreateUrl": "{% url 'content:api_ic_create' module.id %}",
     "icUpdateBase": "/api/ic/",
     "icDeleteBase": "/api/ic/",
-    "accCreateUrl": "{% url 'content:api_accordion_create' subject.id %}",
+    "accCreateUrl": "{% url 'content:api_accordion_create' module.id %}",
     "accUpdateBase": "/api/accordion/",
     "accDeleteBase": "/api/accordion/",
     "csrfToken": "{{ csrf_token }}"

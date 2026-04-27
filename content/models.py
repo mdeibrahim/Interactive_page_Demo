@@ -87,9 +87,13 @@ class Module(models.Model):
     course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='modules')
     title = models.CharField(max_length=255)
     slug = models.SlugField()
+    body_content = models.TextField(
+        help_text="HTML content. Use <span class='highlight-link' data-content-id='ID'>text</span> to add interactive highlights."
+    )
     description = models.TextField(blank=True)
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         verbose_name = 'Module'
@@ -99,6 +103,22 @@ class Module(models.Model):
 
     def __str__(self):
         return f"{self.course.name} → {self.title}"
+
+
+class ModuleAccordionSection(models.Model):
+    module = models.ForeignKey('Module', on_delete=models.CASCADE, related_name='accordion_sections')
+    title = models.CharField(max_length=255)
+    content = models.TextField(blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_open_by_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        return f"{self.module.title} - {self.title}"
 
 
 PAYMENT_METHOD_CHOICES = [
@@ -125,13 +145,21 @@ class ModulePurchase(models.Model):
         return f"{self.user} purchased {self.course.name}"
 
 
+CONTENT_TYPE_CHOICES = [
+    ('text', 'Text / Rich HTML'),
+    ('image', 'Image'),
+    ('audio', 'Audio'),
+    ('video', 'Video (Upload)'),
+    ('youtube', 'YouTube Video'),
+]
+
 class CourseContent(models.Model):
     module = models.ForeignKey('Module', on_delete=models.CASCADE, related_name='course_contents', blank=True, null=True)
     title = models.CharField(max_length=255)
-    video_url = models.URLField(null=True, blank=True)
-    duration_seconds = models.PositiveIntegerField(null=True, blank=True, default=0)
-    order = models.PositiveIntegerField(default=0,null=True,blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    content_type = models.CharField(max_length=20, choices=CONTENT_TYPE_CHOICES, default='text')
+    order = models.PositiveIntegerField(default=0)
+    video_url = models.URLField(blank=True, null=True)
+    duration_seconds = models.PositiveIntegerField(blank=True, null=True, default=0)
 
     # Text content
     text_content = models.TextField(blank=True, help_text="For 'text' type — can include HTML with bold/italic/underline")
@@ -143,6 +171,8 @@ class CourseContent(models.Model):
 
     # YouTube
     youtube_url = models.URLField(blank=True, help_text="Full YouTube URL e.g. https://www.youtube.com/watch?v=...")
+
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"[{self.get_content_type_display()}] {self.title}"
@@ -287,29 +317,6 @@ class ApprovalStatus(models.TextChoices):
     APPROVED = 'approved', 'Approved'
     REJECTED = 'rejected', 'Rejected'
 
-
-class CourseChangeRequest(models.Model):
-    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_change_requests')
-    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='change_requests', blank=True, null=True)
-    course_new = models.ForeignKey('Course', on_delete=models.SET_NULL, related_name='change_requests_new', blank=True, null=True)
-    # requested_category previously FK -> Category; store free-text name now
-    requested_category = models.CharField(max_length=255, blank=True, null=True)
-    requested_course_name = models.CharField(max_length=255, blank=True, default='')
-    requested_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    request_type = models.CharField(max_length=20, choices=[('add', 'Add'), ('update', 'Update'), ('remove', 'Remove')])
-    summary = models.CharField(max_length=255)
-    details = models.TextField(blank=True, default='')
-    status = models.CharField(max_length=20, choices=ApprovalStatus.choices, default=ApprovalStatus.PENDING)
-    admin_note = models.TextField(blank=True, default='')
-    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='reviewed_change_requests', blank=True, null=True)
-    reviewed_at = models.DateTimeField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"{self.course.name} - {self.request_type} ({self.status})"
     
 
 class PaymentInstruction(models.Model):
@@ -320,79 +327,4 @@ class PaymentInstruction(models.Model):
 
 
 
-CONTENT_TYPE_CHOICES = [
-    ('text', 'Text / Rich HTML'),
-    ('image', 'Image'),
-    ('audio', 'Audio'),
-    ('video', 'Video (Upload)'),
-    ('youtube', 'YouTube Video'),
-]
 
-
-class InteractiveContent(models.Model):
-    """
-    A piece of multimedia content that can be linked to a highlight/click-point
-    inside a subject's body content. Opened in a modal on click.
-    """
-    module = models.ForeignKey('Module', on_delete=models.CASCADE, related_name='interactive_contents', blank=True, null=True)
-    title = models.CharField(max_length=255)
-    content_type = models.CharField(max_length=20, choices=CONTENT_TYPE_CHOICES)
-
-    # Text content
-    text_content = models.TextField(blank=True, help_text="For 'text' type — can include HTML with bold/italic/underline")
-
-    # Media files
-    image = models.ImageField(upload_to='interactive/images/', blank=True, null=True)
-    audio = models.FileField(upload_to='interactive/audio/', blank=True, null=True)
-    video = models.FileField(upload_to='interactive/videos/', blank=True, null=True)
-
-    # YouTube
-    youtube_url = models.URLField(blank=True, help_text="Full YouTube URL e.g. https://www.youtube.com/watch?v=...")
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"[{self.get_content_type_display()}] {self.title}"
-
-    def get_youtube_embed_url(self):
-        """Convert a YouTube URL (watch/shorts/youtu.be/embed) to embed URL."""
-        from urllib.parse import urlparse, parse_qs
-        import re
-
-        if not self.youtube_url:
-            return ''
-
-        raw_url = self.youtube_url.strip()
-        video_id = None
-
-        try:
-            parsed = urlparse(raw_url)
-            host = (parsed.netloc or '').lower().replace('www.', '')
-
-            # https://youtube.com/watch?v=VIDEO_ID
-            if host in ('youtube.com', 'm.youtube.com'):
-                if parsed.path == '/watch':
-                    video_id = (parse_qs(parsed.query).get('v') or [None])[0]
-                elif parsed.path.startswith('/shorts/'):
-                    video_id = parsed.path.split('/shorts/', 1)[1].split('/', 1)[0]
-                elif parsed.path.startswith('/live/'):
-                    video_id = parsed.path.split('/live/', 1)[1].split('/', 1)[0]
-                elif parsed.path.startswith('/embed/'):
-                    video_id = parsed.path.split('/embed/', 1)[1].split('/', 1)[0]
-
-            # https://youtu.be/VIDEO_ID
-            elif host == 'youtu.be':
-                video_id = parsed.path.lstrip('/').split('/', 1)[0]
-        except Exception:
-            video_id = None
-
-        # Fallback regex (supports pasted text/HTML containing a YouTube id)
-        if not video_id:
-            match = re.search(r'(?:v=|youtu\.be/|/embed/|/shorts/|/live/)([a-zA-Z0-9_-]{11})', raw_url)
-            if match:
-                video_id = match.group(1)
-
-        if video_id and re.fullmatch(r'[a-zA-Z0-9_-]{11}', video_id):
-            return f"https://www.youtube.com/embed/{video_id}"
-
-        return ''
