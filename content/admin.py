@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django import forms
 from django.utils import timezone
 from unfold.admin import ModelAdmin, TabularInline
 from .models import (
@@ -135,6 +136,20 @@ class ModuleAdmin(ModelAdmin):
     inlines = [CourseContentInline, ModuleAccordionSectionInline]
     readonly_fields = ('frontend_editor_link',)
 
+    class ModuleForm(forms.ModelForm):
+        class Meta:
+            model = Module
+            fields = '__all__'
+            widgets = {
+                'body_content': forms.Textarea(attrs={'class': 'rte-enabled', 'rows': 12}),
+            }
+
+    form = ModuleForm
+
+    class Media:
+        js = ('js/admin_rte.js',)
+        css = {'all': ('css/admin_rte.css',)}
+
 
     fieldsets = (
         ('Basic Info', {
@@ -199,6 +214,20 @@ class CourseContentAdmin(ModelAdmin):
             'fields': ('preview',),
         }),
     )
+
+    class CourseContentForm(forms.ModelForm):
+        class Meta:
+            model = CourseContent
+            fields = '__all__'
+            widgets = {
+                'text_content': forms.Textarea(attrs={'class': 'rte-enabled', 'rows': 8}),
+            }
+
+    form = CourseContentForm
+
+    class Media:
+        js = ('js/admin_rte.js',)
+        css = {'all': ('css/admin_rte.css',)}
 
     def course(self, obj):
         return obj.module.course

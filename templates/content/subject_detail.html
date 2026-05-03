@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load content_render %}
 
 {% block title %}{{ module.title }} — {{ course.name }} — Teaching Platform{% endblock %}
 {% block meta_description %}{{ module.description|default:"Interactive lesson with multimedia explanations." }}{% endblock %}
@@ -79,7 +80,7 @@
                     Module Notes and Lesson Overview
                 </h2>
                 <div class="article-body" id="articleBody">
-                    {{ module.body_content|safe }}
+                    {{ module.body_content|render_stored_content }}
                 </div>
             </div>
 
@@ -125,7 +126,7 @@
                             <i class="fa-solid fa-chevron-down accordion-icon"></i>
                         </button>
                         <div class="accordion-body" id="acc-body-{{ section.id }}" {% if not section.is_open_by_default %}hidden{% endif %}>
-                            <div class="accordion-content">{{ section.content|safe }}</div>
+                            <div class="accordion-content">{{ section.content|render_stored_content }}</div>
                         </div>
                     </div>
                     {% endfor %}

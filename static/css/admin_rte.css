@@ -1,0 +1,31 @@
+.admin-rte-wrapper { border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
+.admin-rte-toolbar { background: #f8fafc; padding: 6px; display: flex; gap: 6px; border-bottom: 1px solid #e6e9ee; }
+.admin-rte-btn { background: white; border: 1px solid #d1d5db; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+.admin-rte-btn:hover { background: #f1f5f9; }
+.admin-rte-editor { min-height: 160px; padding: 12px; background: white; outline: none; }
+
+.admin-rte-btn[disabled] { opacity: 0.6; cursor: default; }
+.admin-rte-editor img { max-width: 100%; display: block; margin: 8px 0; }
+.admin-rte-editor audio, .admin-rte-editor video { display: block; margin: 8px 0; max-width: 100%; }
+
+/* highlight-link styling for editor preview */
+.highlight-link { background: rgba(37,99,235,0.08); padding: 0 6px; border-radius: 4px; text-decoration: none; }
+.highlight-link--blue { background: rgba(59,130,246,0.08); color: #2563eb; font-weight: 600; }
+.highlight-link--red { background: rgba(239,68,68,0.08); color: #dc2626; font-weight: 600; }
+
+@media (prefers-color-scheme: dark) {
+	.highlight-link { background: rgba(96,165,250,0.08); }
+	.highlight-link--blue { color: #93c5fd; }
+	.highlight-link--red { color: #fca5a5; }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+	.admin-rte-wrapper { border-color: #374151; }
+	.admin-rte-toolbar { background: #0b1220; border-bottom: 1px solid #1f2937; }
+	.admin-rte-btn { background: #0b1220; border: 1px solid #374151; color: #e5e7eb; }
+	.admin-rte-btn:hover { background: #111827; }
+	.admin-rte-editor { min-height: 160px; padding: 12px; background: #0b1220; color: #e5e7eb; }
+	.admin-rte-editor a { color: #60a5fa; }
+	.admin-rte-toolbar, .admin-rte-editor, .admin-rte-btn { transition: background .12s ease, color .12s ease; }
+}

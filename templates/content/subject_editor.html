@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load content_render %}
 
 {% block title %}Editor — {{ module.title }}{% endblock %}
 {% block meta_description %}Frontend rich-text editor for {{ module.title }}{% endblock %}
@@ -68,7 +69,7 @@
                 </div>
 
                 <div class="rte-editor-wrapper">
-                    <div class="rte-content" id="rteContent" contenteditable="true" spellcheck="true" data-placeholder="Start writing your module content here...">{{ module.body_content|safe }}</div>
+                    <div class="rte-content" id="rteContent" contenteditable="true" spellcheck="true" data-placeholder="Start writing your module content here...">{{ module.body_content|render_stored_content }}</div>
                 </div>
             </div>
         </div>

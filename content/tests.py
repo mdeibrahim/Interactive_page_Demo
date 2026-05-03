@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from .models import ModulePurchase, Course
+from .templatetags.content_render import render_stored_content
 
 
 User = get_user_model()
@@ -35,5 +36,17 @@ class PurchaseAccessTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'content/course_detail.html')
+
+
+class ContentRenderTests(TestCase):
+    def test_plain_text_preserves_line_breaks(self):
+        rendered = str(render_stored_content('Line one\nLine two'))
+
+        self.assertIn('Line one<br>Line two', rendered)
+
+    def test_html_content_is_preserved(self):
+        html = '<p><strong>Target Persona</strong></p>'
+
+        self.assertEqual(str(render_stored_content(html)), html)
 
 

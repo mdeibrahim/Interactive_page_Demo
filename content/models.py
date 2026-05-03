@@ -88,7 +88,7 @@ class Module(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField()
     body_content = models.TextField(
-        help_text="HTML content. Use <span class='highlight-link' data-content-id='ID'>text</span> to add interactive highlights."
+        help_text="Plain text or HTML. Use <span class='highlight-link' data-content-id='ID'>text</span> to add interactive highlights."
     )
     description = models.TextField(blank=True)
     order = models.PositiveIntegerField(default=0)
@@ -162,7 +162,7 @@ class CourseContent(models.Model):
     duration_seconds = models.PositiveIntegerField(blank=True, null=True, default=0)
 
     # Text content
-    text_content = models.TextField(blank=True, help_text="For 'text' type — can include HTML with bold/italic/underline")
+    text_content = models.TextField(blank=True, help_text="Plain text or HTML for text items.")
 
     # Media files
     image = models.ImageField(upload_to='interactive/images/', blank=True, null=True)

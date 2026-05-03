@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load content_render %}
 
 {% block title %}{{ video.title }} — {{ module.title }} — {{ course.name }}{% endblock %}
 
@@ -63,9 +64,9 @@
                                     </h2>
                                     <div class="article-body" id="articleBody">
                                         {% if video.content_type == 'text' and video.text_content %}
-                                        {{ video.text_content|safe }}
+                                        {{ video.text_content|render_stored_content }}
                                         {% else %}
-                                        {{ module.body_content|safe }}
+                                        {{ module.body_content|render_stored_content }}
                                         {% endif %}
                                     </div>
                                 </div>
@@ -90,7 +91,7 @@
                                                 <i class="fa-solid fa-chevron-down accordion-icon"></i>
                                             </button>
                                             <div class="accordion-body" id="acc-body-{{ section.id }}" {% if not section.is_open_by_default %}hidden{% endif %}>
-                                                <div class="accordion-content">{{ section.content|safe }}</div>
+                                                <div class="accordion-content">{{ section.content|render_stored_content }}</div>
                                             </div>
                                         </div>
                                         {% endfor %}
